@@ -1,4 +1,4 @@
-@import "/styles/icons.wxss";
+@import "styles/icons.wxss";
 
 /* 颜色和字体。CSS 变量会继承到自定义组件里；组件各自引入 icons.wxss */
 page {

@@ -1,4 +1,4 @@
-@import "/styles/icons.wxss";
+@import "../../styles/icons.wxss";
 
 .tchip { font-size: 23rpx; padding: 4rpx 16rpx; border-radius: 12rpx; background: var(--surface-2); color: var(--fg-2); }
 .scrim { position: fixed; left: 0; top: 0; right: 0; bottom: 0; z-index: 100; background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity 0.25s; }

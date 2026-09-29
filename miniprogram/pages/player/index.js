@@ -9,6 +9,7 @@ const fmt = require('../../utils/format')
 const RATES = [1, 0.75, 0.5, 1.25]
 const MODES = [{ k: 'bi', t: '双语' }, { k: 'en', t: '英文' }, { k: 'blind', t: '盲听' }]
 const SAVE_EVERY = 3000 // 播放中最多每 3 秒写一次进度
+const LOAD_TIMEOUT = 8000 // 有些机型地址 404 时不触发 onError，超时就换下一个地址
 
 function rateText(r) {
   return (r % 0.5 ? r.toFixed(2) : r.toFixed(1)) + '×'
@@ -106,6 +107,7 @@ Page({
   onUnload() {
     this.saveProgress()
     this.stopTick()
+    this.clearLoadTimer()
     if (this.ctx) this.ctx.destroy()
     wx.setKeepScreenOn({ keepScreenOn: false })
   },
@@ -121,6 +123,7 @@ Page({
     ctx.playbackRate = RATES[this.rateIx]
 
     ctx.onPlay(() => {
+      this.clearLoadTimer()
       if (!this.started) {
         this.started = true
         // startTime 在部分机型上不生效，第一次开始播放时再跳一次
@@ -141,10 +144,12 @@ Page({
       wx.showToast({ title: '听完了，已标记为学完', icon: 'none' })
     })
     ctx.onCanplay(() => {
+      this.clearLoadTimer()
       const s = this.srcs[this.srcIx]
       if (s && s.cacheable) audioSource.saveToCache(this.mat.id, s.url)
     })
     ctx.onError(err => {
+      this.clearLoadTimer()
       console.warn('音频加载失败', this.srcs[this.srcIx], err)
       this.useSource(this.srcIx + 1, this.wantPlay)
     })
@@ -174,7 +179,25 @@ Page({
     this.seekGuard = Date.now() + 600
     this.ctx.startTime = t
     this.ctx.src = this.srcs[i].url
-    if (play) this.ctx.play()
+    if (play) {
+      this.ctx.play()
+      this.watchLoad()
+    }
+  },
+
+  watchLoad() {
+    this.clearLoadTimer()
+    this.loadTimer = setTimeout(() => {
+      if (this.started) return
+      console.warn('音频加载超时', this.srcs[this.srcIx])
+      this.ctx.stop()
+      this.useSource(this.srcIx + 1, true)
+    }, LOAD_TIMEOUT)
+  },
+
+  clearLoadTimer() {
+    if (this.loadTimer) clearTimeout(this.loadTimer)
+    this.loadTimer = null
   },
 
   play() {
@@ -183,6 +206,7 @@ Page({
       return
     }
     this.ctx.play()
+    if (!this.started) this.watchLoad()
   },
 
   onStopped() {
