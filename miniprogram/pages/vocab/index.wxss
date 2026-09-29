@@ -1,0 +1,10 @@
+.vocab { padding: 12rpx 32rpx 0; }
+.row { display: flex; align-items: center; border-bottom: 1rpx solid var(--line); }
+.main { flex: 1; min-width: 0; padding: 28rpx 0; }
+.head { display: flex; align-items: center; flex-wrap: wrap; }
+.hw { font-family: var(--f-read); font-size: 34rpx; font-weight: 600; margin-right: 16rpx; }
+.ctx { font-size: 27rpx; margin-top: 4rpx; }
+.src { font-size: 24rpx; color: var(--dim); margin-top: 2rpx; }
+.unstar { width: 80rpx; height: 80rpx; display: flex; align-items: center; justify-content: center; font-size: 40rpx; color: var(--hl-strong); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(150rpx + env(safe-area-inset-bottom)); z-index: 60; display: flex; align-items: center; white-space: nowrap; background: var(--ink); color: var(--on-ink); font-size: 26rpx; padding: 16rpx 28rpx; border-radius: 24rpx; }
+.undo { margin-left: 24rpx; font-weight: 600; color: var(--hl-strong); }

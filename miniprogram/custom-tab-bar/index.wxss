@@ -1,0 +1,7 @@
+@import "/styles/icons.wxss";
+
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; background: var(--surface); border-top: 1rpx solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+.tab { flex: 1; height: 104rpx; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--dim); }
+.tab.on { color: var(--fg); }
+.ic { font-size: 46rpx; }
+.label { font-size: 21rpx; margin-top: 4rpx; line-height: 1.2; }

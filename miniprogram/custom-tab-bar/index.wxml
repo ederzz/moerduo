@@ -1,0 +1,6 @@
+<view class="tabbar" wx:if="{{!hidden}}">
+  <view wx:for="{{list}}" wx:key="path" class="tab {{selected === index ? 'on' : ''}}" data-i="{{index}}" bindtap="go">
+    <text class="i i-{{item.icon}} ic"></text>
+    <text class="label">{{item.text}}</text>
+  </view>
+</view>

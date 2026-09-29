@@ -1,0 +1,67 @@
+@import "/styles/icons.wxss";
+
+/* 颜色和字体。CSS 变量会继承到自定义组件里；组件各自引入 icons.wxss */
+page {
+  --bg: #FAFAF7;
+  --surface: #FFFFFF;
+  --surface-2: #F0F1EC;
+  --fg: #1B2029;
+  --fg-2: #565D6B;
+  --dim: #7A808D;
+  --line: #E2E4DE;
+  --wave: #D3D6CF;
+  --wave-cur: #9EA3AC;
+  --hl: #FFE270;
+  --hl-dim: rgba(255, 226, 112, 0.55);
+  --hl-strong: #FFD338;
+  --ink: #1B2029;
+  --on-ink: #FAFAF7;
+  --deep: #1D2330;
+  --on-deep: #F2F2EE;
+  --deep-2: #3A4254;
+  --good: #2F7A58;
+  --scrim: rgba(17, 19, 24, 0.36);
+  --f-read: Georgia, "Times New Roman", "Noto Serif", "Songti SC", serif;
+  --f-num: Menlo, "SF Mono", "Roboto Mono", monospace;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, "PingFang SC", "Helvetica Neue", "Noto Sans SC", sans-serif;
+  font-size: 28rpx;
+  line-height: 1.6;
+}
+
+@media (prefers-color-scheme: dark) {
+  page {
+    --bg: #14171D;
+    --surface: #1B1F27;
+    --surface-2: #222731;
+    --fg: #E9EAEE;
+    --fg-2: #A7ACB8;
+    --dim: #7F8595;
+    --line: #2A2F3A;
+    --wave: #343A46;
+    --wave-cur: #6B7282;
+    --hl: rgba(236, 196, 64, 0.42);
+    --hl-dim: rgba(236, 196, 64, 0.22);
+    --hl-strong: rgba(236, 196, 64, 0.66);
+    --ink: #E9EAEE;
+    --on-ink: #14171D;
+    --deep: #232936;
+    --on-deep: #F2F2EE;
+    --deep-2: #434C60;
+    --good: #6BC49A;
+    --scrim: rgba(0, 0, 0, 0.55);
+  }
+}
+
+/* 通用：筛选标签、类型标签、空状态 */
+.chips { display: flex; flex-wrap: wrap; margin-top: 20rpx; }
+.chip { font-size: 26rpx; padding: 10rpx 24rpx; border-radius: 999rpx; background: var(--surface-2); color: var(--fg-2); margin: 0 16rpx 12rpx 0; }
+.chip.on { background: var(--ink); color: var(--on-ink); }
+.tchip { font-size: 23rpx; padding: 4rpx 16rpx; border-radius: 12rpx; background: var(--surface-2); color: var(--fg-2); }
+.sec-head { display: flex; align-items: baseline; justify-content: space-between; }
+.sec-head .h { font-size: 34rpx; font-weight: 600; }
+.sec-head .n { font-size: 25rpx; color: var(--dim); }
+.empty { padding: 96rpx 24rpx; text-align: center; color: var(--fg-2); font-size: 27rpx; }
+.empty .t { display: block; font-size: 30rpx; color: var(--fg); margin-bottom: 8rpx; font-weight: 600; }
+.tab-space { height: calc(140rpx + env(safe-area-inset-bottom)); }

@@ -1,0 +1,65 @@
+<view class="wrap">
+  <view class="bar">
+    <view class="seg">
+      <view wx:for="{{modes}}" class="seg-b {{mode === item.k ? 'on' : ''}}" data-m="{{item.k}}" bindtap="onMode">{{item.t}}</view>
+    </view>
+    <text class="counter">{{counter}}</text>
+  </view>
+
+  <view class="tip" wx:if="{{tip}}">
+    <text class="tip-t">点<text class="tip-hl">荧光标记</text>的词或短语看释义，点句子从这句开始播</text>
+    <text class="tip-ok" bindtap="onTipOk">知道了</text>
+  </view>
+
+  <scroll-view id="cues" class="cues" scroll-y enhanced show-scrollbar="{{false}}" scroll-top="{{scrollTop}}" scroll-with-animation="{{anim}}" bindtouchstart="onTouchStart" bindtouchmove="onUserScroll">
+    <view wx:for="{{cues}}" wx:for-item="c" wx:for-index="ci" wx:key="i" class="cue {{c.on ? 'on' : ''}} {{mode === 'blind' && !c.rev ? 'blur' : ''}}" data-i="{{ci}}" bindtap="onCueTap">
+      <view class="meta">
+        <view class="eq {{playing ? '' : 'paused'}}" wx:if="{{c.on}}"><view class="eb"></view><view class="eb"></view><view class="eb"></view></view>
+        <text class="ts">{{c.ts}}</text>
+      </view>
+      <view class="en"><text wx:if="{{c.lead}}">{{c.lead}}</text><block wx:for="{{c.toks}}" wx:for-item="t" wx:for-index="k"><text class="w {{t.a ? 'a' : ''}} {{c.sel && k >= c.sel.s && k <= c.sel.e ? 'sel' : ''}}" data-c="{{ci}}" data-k="{{k}}" catchtap="onWordTap">{{t.w}}</text><text wx:if="{{t.p}}" class="{{t.ap ? 'a' : ''}} {{c.sel && k >= c.sel.s && k < c.sel.e ? 'sel' : ''}}">{{t.p}}</text></block></view>
+      <view class="zh" wx:if="{{mode !== 'en'}}">{{c.zh}}</view>
+      <view class="reveal" wx:if="{{mode === 'blind' && c.on && !c.rev}}">点按显示本句</view>
+    </view>
+    <view class="tail"></view>
+  </scroll-view>
+
+  <view class="follow" wx:if="{{!follow}}" bindtap="onFollow"><text class="i i-down"></text>回到当前句</view>
+
+  <view class="dock">
+    <view id="wave" class="wave" bindtouchstart="onWave" bindtouchmove="onWave">
+      <view class="bars base"><view wx:for="{{peaks}}" class="b" style="height: {{item}}%"></view></view>
+      <view class="clip" style="left: {{curL}}%; width: {{curW}}%">
+        <view class="bars cur {{loop ? 'loop' : ''}}" style="width: {{10000 / curW}}%; transform: translateX(-{{curL}}%)"><view wx:for="{{peaks}}" class="b" style="height: {{item}}%"></view></view>
+      </view>
+      <view class="clip" wx:if="{{playedW > 0.2}}" style="left: 0; width: {{playedW}}%">
+        <view class="bars played" style="width: {{10000 / playedW}}%"><view wx:for="{{peaks}}" class="b" style="height: {{item}}%"></view></view>
+      </view>
+    </view>
+    <view class="times"><text>{{tNow}}</text><text>{{tDur}}</text></view>
+    <view class="ctrls">
+      <view class="cb" bindtap="onRate"><view class="ic"><text class="rate">{{rateText}}</text></view>倍速</view>
+      <view class="cb" bindtap="onPrev"><view class="ic"><text class="i i-prev"></text></view>上一句</view>
+      <view class="play" bindtap="onPlayTap"><text class="i {{playing ? 'i-pause' : 'i-play'}}"></text></view>
+      <view class="cb" bindtap="onNext"><view class="ic"><text class="i i-next"></text></view>下一句</view>
+      <view class="cb {{loop ? 'on' : ''}}" bindtap="onLoop"><view class="ic"><text class="i i-loop"></text></view>单句循环</view>
+    </view>
+  </view>
+</view>
+
+<note-sheet
+  show="{{sheet.show}}"
+  items="{{sheet.items}}"
+  active="{{sheet.active}}"
+  unknown="{{sheet.unknown}}"
+  ctx="player"
+  nav-text="{{sheet.navText}}"
+  can-prev="{{sheet.canPrev}}"
+  can-next="{{sheet.canNext}}"
+  bind:close="onSheetClose"
+  bind:tab="onSheetTab"
+  bind:prev="onSheetPrev"
+  bind:next="onSheetNext"
+  bind:replay="onSheetReplay"
+  bind:save="onSheetSave"
+/>

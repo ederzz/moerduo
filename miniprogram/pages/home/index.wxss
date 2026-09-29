@@ -1,0 +1,31 @@
+.home { padding: 12rpx 32rpx 0; }
+.cont { background: var(--deep); color: var(--on-deep); border-radius: 44rpx; padding: 36rpx 36rpx 32rpx; }
+.cont-label { font-size: 24rpx; letter-spacing: 2rpx; opacity: 0.7; }
+.cont-title { font-family: var(--f-read); font-size: 50rpx; line-height: 1.2; font-weight: 600; margin-top: 4rpx; }
+.cont-sub { font-size: 26rpx; opacity: 0.78; margin-top: 6rpx; }
+.miniwave { display: flex; align-items: center; height: 60rpx; margin: 24rpx 0; }
+.mb { flex: 1; margin: 0 2rpx; border-radius: 2rpx; background: var(--deep-2); }
+.mb.on { background: var(--hl-strong); }
+.cont-foot { display: flex; align-items: center; justify-content: space-between; }
+.cont-play { display: flex; align-items: center; background: var(--on-deep); color: var(--deep); border-radius: 999rpx; padding: 16rpx 32rpx 16rpx 24rpx; font-weight: 600; font-size: 28rpx; }
+.cont-play .i { margin-right: 12rpx; font-size: 26rpx; }
+.cont-left { font-size: 25rpx; opacity: 0.7; }
+
+.sec { margin-top: 44rpx; }
+.row { display: flex; align-items: center; padding: 28rpx 0; border-bottom: 1rpx solid var(--line); }
+.tile { width: 104rpx; height: 104rpx; border-radius: 28rpx; background: var(--surface-2); display: flex; align-items: center; padding: 0 16rpx; box-sizing: border-box; flex: none; }
+.tb { flex: 1; margin: 0 1.5rpx; border-radius: 2rpx; background: var(--wave-cur); }
+.tb.on { background: var(--fg); }
+.info { flex: 1; min-width: 0; margin: 0 28rpx; }
+.title { font-family: var(--f-read); font-size: 33rpx; font-weight: 600; line-height: 1.3; }
+.zh { font-size: 26rpx; color: var(--fg-2); }
+.meta { font-size: 24rpx; color: var(--dim); display: flex; flex-wrap: wrap; margin-top: 6rpx; }
+.meta > text { margin-right: 20rpx; }
+.off { color: var(--good); }
+.off .i { margin-right: 4rpx; }
+.status { display: flex; flex-direction: column; align-items: center; font-size: 24rpx; color: var(--fg-2); min-width: 84rpx; }
+.status.done { color: var(--good); }
+.ok { font-size: 36rpx; }
+.new { font-size: 23rpx; padding: 4rpx 16rpx; border-radius: 999rpx; border: 1rpx solid var(--line); }
+.ring { width: 56rpx; height: 56rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 4rpx; }
+.ring-in { width: 44rpx; height: 44rpx; border-radius: 50%; background: var(--bg); }

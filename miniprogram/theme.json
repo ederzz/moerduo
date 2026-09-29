@@ -1,0 +1,4 @@
+{
+  "light": { "navBg": "#FAFAF7", "navText": "black", "bg": "#FAFAF7", "bgText": "dark" },
+  "dark": { "navBg": "#14171D", "navText": "white", "bg": "#14171D", "bgText": "light" }
+}

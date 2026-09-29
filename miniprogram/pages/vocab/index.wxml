@@ -1,0 +1,31 @@
+<view class="vocab">
+  <view class="sec-head"><text class="h">收藏的词和短语</text><text class="n">{{total}} 个</text></view>
+  <view class="chips">
+    <view wx:for="{{filters}}" wx:key="k" class="chip {{filter === item.k ? 'on' : ''}}" data-k="{{item.k}}" bindtap="onFilter">{{item.t}} {{item.n}}</view>
+  </view>
+
+  <view wx:for="{{list}}" wx:key="key" class="row" data-material="{{item.material}}" data-note="{{item.note}}" bindtap="onOpen">
+    <view class="main">
+      <view class="head"><text class="hw">{{item.head}}</text><text class="tchip">{{item.typeLabel}}</text></view>
+      <view class="ctx">{{item.context}}</view>
+      <view class="src">{{item.src}}</view>
+    </view>
+    <view class="unstar" data-material="{{item.material}}" data-note="{{item.note}}" catchtap="onUnstar"><text class="i i-star-fill"></text></view>
+  </view>
+
+  <view class="empty" wx:if="{{!total}}"><text class="t">还没有收藏</text>在播放页点荧光标记的词，再点「加入生词本」</view>
+  <view class="empty" wx:elif="{{!list.length}}">这个分类下还没有收藏</view>
+  <view class="tab-space"></view>
+</view>
+
+<view class="toast" wx:if="{{toast}}"><text>{{toast}}</text><text class="undo" bindtap="onUndo">撤销</text></view>
+
+<note-sheet
+  show="{{sheet.show}}"
+  items="{{sheet.items}}"
+  active="{{0}}"
+  ctx="vocab"
+  bind:close="onSheetClose"
+  bind:save="onSheetSave"
+  bind:gosrc="onSheetGoSource"
+/>

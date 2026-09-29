@@ -1,0 +1,5 @@
+{
+  "navigationBarTitleText": "",
+  "disableScroll": true,
+  "usingComponents": { "note-sheet": "/components/note-sheet/index" }
+}

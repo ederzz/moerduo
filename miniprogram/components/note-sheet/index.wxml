@@ -1,0 +1,62 @@
+<view class="scrim {{show ? 'on' : ''}}" catchtap="close" catchtouchmove="noop"></view>
+<view class="sheet {{show ? 'on' : ''}}">
+  <view class="handle" bindtap="close"></view>
+
+  <view class="tabs" wx:if="{{items.length > 1}}">
+    <view wx:for="{{items}}" wx:key="id" class="tab {{index === active ? 'on' : ''}}" data-i="{{index}}" bindtap="onTab">
+      <text class="tab-head">{{item.head}}</text><text class="tab-type">{{item.typeLabel}}</text>
+    </view>
+  </view>
+
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}" scroll-top="{{scrollTop}}">
+    <block wx:if="{{cur}}">
+      <view class="top">
+        <text class="tchip">{{cur.typeLabel}}</text>
+        <text class="pos" wx:if="{{cur.pos}}">{{cur.pos}}</text>
+        <view class="nav" wx:if="{{ctx === 'player'}}">
+          <view class="nb {{canPrev ? '' : 'off'}}" bindtap="onPrev"><text class="i i-left"></text></view>
+          <text>{{navText}}</text>
+          <view class="nb {{canNext ? '' : 'off'}}" bindtap="onNext"><text class="i i-right"></text></view>
+        </view>
+      </view>
+      <view class="head">{{cur.head}}</view>
+      <view class="ipa" wx:if="{{cur.ipa}}">{{cur.ipa}}</view>
+      <view class="context">{{cur.context}}</view>
+
+      <view class="blk">
+        <view class="h3">原句 · 第 {{cur.cueNo}} 句</view>
+        <view class="src"><text wx:for="{{cur.sentence}}" class="{{item.hl ? 'mark' : ''}}">{{item.t}}</text></view>
+        <view class="src-zh">{{cur.zh}}</view>
+        <view class="link" wx:if="{{ctx === 'player'}}" bindtap="onReplay"><text class="i i-play"></text>重听这句</view>
+        <view class="link" wx:else bindtap="onGoSource"><text class="i i-play"></text>去原文听</view>
+      </view>
+
+      <view class="blk" wx:for="{{cur.sections}}" wx:for-item="sec" wx:key="title">
+        <view class="h3">{{sec.title}}</view>
+        <view wx:for="{{sec.blocks}}" wx:for-item="b" class="{{b.k === 'li' ? 'li' : 'p'}}">
+          <view class="line"><text wx:for="{{b.r}}" wx:for-item="r" class="{{r.b ? 'b' : ''}} {{r.i ? 'it' : ''}}">{{r.t}}</text></view>
+          <view class="sub" wx:if="{{b.sub}}">{{b.sub}}</view>
+        </view>
+      </view>
+    </block>
+
+    <block wx:elif="{{unknown}}">
+      <view class="top"><text class="tchip">未收录</text></view>
+      <view class="head">{{unknown.word}}</view>
+      <view class="miss">这个词在本篇没有释义。想查的话，把它写进这份素材的 words.txt，再运行 word-notes 生成。</view>
+      <view class="blk">
+        <view class="h3">原句 · 第 {{unknown.cueNo}} 句</view>
+        <view class="src"><text wx:for="{{unknown.sentence}}" class="{{item.hl ? 'mark' : ''}}">{{item.t}}</text></view>
+        <view class="src-zh">{{unknown.zh}}</view>
+        <view class="link" wx:if="{{ctx === 'player'}}" bindtap="onReplay"><text class="i i-play"></text>重听这句</view>
+      </view>
+    </block>
+    <view class="pad"></view>
+  </scroll-view>
+
+  <view class="foot" wx:if="{{cur}}">
+    <view class="save {{cur.saved ? 'saved' : ''}}" bindtap="onSave">
+      <text class="i {{cur.saved ? 'i-star-fill' : 'i-star'}}"></text>{{cur.saved ? '已在生词本' : '加入生词本'}}
+    </view>
+  </view>
+</view>

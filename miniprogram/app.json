@@ -1,0 +1,29 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/vocab/index",
+    "pages/player/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "磨耳朵",
+    "navigationBarBackgroundColor": "@navBg",
+    "navigationBarTextStyle": "@navText",
+    "backgroundColor": "@bg",
+    "backgroundTextStyle": "@bgText"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#7A808D",
+    "selectedColor": "#1B2029",
+    "backgroundColor": "#FFFFFF",
+    "list": [
+      { "pagePath": "pages/home/index", "text": "材料" },
+      { "pagePath": "pages/vocab/index", "text": "生词本" }
+    ]
+  },
+  "darkmode": true,
+  "themeLocation": "theme.json",
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation": "sitemap.json"
+}

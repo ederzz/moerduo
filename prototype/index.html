@@ -1,0 +1,754 @@
+<meta charset="utf-8">
+<title>磨耳朵原型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400&display=swap">
+<style>
+/* Layout: review canvas — an operable phone prototype (sticky, left) beside the design notes (right); stacks on narrow screens */
+:root{
+  --canvas:#E8EAE5; --bg:#FAFAF7; --surface:#FFFFFF; --surface-2:#F0F1EC;
+  --fg:#1B2029; --fg-2:#565D6B; --dim:#7A808D; --line:#E2E4DE; --wave:#D3D6CF; --wave-cur:#9EA3AC;
+  --hl:#FFE270; --hl-dim:rgba(255,226,112,.55); --hl-strong:#FFD338;
+  --ink:#1B2029; --on-ink:#FAFAF7; --deep:#1D2330; --on-deep:#F2F2EE; --deep-2:#3A4254;
+  --spk-a:#2D6A86; --spk-b:#A0582B; --good:#2F7A58;
+  --scrim:rgba(17,19,24,.36); --bezel:#111318;
+  --f-read:"Literata","Iowan Old Style",Georgia,"Songti SC",serif;
+  --f-ui:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei","Segoe UI",sans-serif;
+  --f-num:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --canvas:#0B0D11; --bg:#14171D; --surface:#1B1F27; --surface-2:#222731;
+  --fg:#E9EAEE; --fg-2:#A7ACB8; --dim:#7F8595; --line:#2A2F3A; --wave:#343A46; --wave-cur:#6B7282;
+  --hl:rgba(236,196,64,.42); --hl-dim:rgba(236,196,64,.22); --hl-strong:rgba(236,196,64,.66);
+  --ink:#E9EAEE; --on-ink:#14171D; --deep:#232936; --on-deep:#F2F2EE; --deep-2:#434C60;
+  --spk-a:#7DB7D2; --spk-b:#DE9A6C; --good:#6BC49A;
+  --scrim:rgba(0,0,0,.55); --bezel:#000; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --canvas:#0B0D11; --bg:#14171D; --surface:#1B1F27; --surface-2:#222731;
+  --fg:#E9EAEE; --fg-2:#A7ACB8; --dim:#7F8595; --line:#2A2F3A; --wave:#343A46; --wave-cur:#6B7282;
+  --hl:rgba(236,196,64,.42); --hl-dim:rgba(236,196,64,.22); --hl-strong:rgba(236,196,64,.66);
+  --ink:#E9EAEE; --on-ink:#14171D; --deep:#232936; --on-deep:#F2F2EE; --deep-2:#434C60;
+  --spk-a:#7DB7D2; --spk-b:#DE9A6C; --good:#6BC49A;
+  --scrim:rgba(0,0,0,.55); --bezel:#000; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--canvas);color:var(--fg);font-family:var(--f-ui);font-size:14px;line-height:1.6;padding-inline:16px;padding-block:32px 56px}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--spk-a);outline-offset:2px;border-radius:6px}
+svg{display:block}
+
+/* ---------- review canvas ---------- */
+.page{max-width:1120px;margin:0 auto;display:grid;gap:28px}
+.page-head{display:grid;gap:6px;max-width:680px}
+.eyebrow{margin:0;font-size:12px;letter-spacing:.08em;color:var(--fg-2)}
+.page-head h1{margin:0;font-size:36px;line-height:1.15;font-weight:700;text-wrap:balance;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.page-head h1 em{font-family:var(--f-read);font-weight:400;font-size:20px;color:var(--fg-2)}
+.lede{margin:0;color:var(--fg-2);font-size:15px}
+.stage{display:grid;grid-template-columns:auto minmax(0,1fr);gap:48px;align-items:start}
+.proto{position:sticky;top:16px;display:grid;gap:12px;justify-items:center}
+.jump{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:375px}
+.jump span{font-size:12px;color:var(--fg-2);align-self:center;margin-right:2px}
+.jump button{font-size:12.5px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--fg-2)}
+.jump button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
+@media (max-width:880px){ .stage{grid-template-columns:minmax(0,1fr)} .proto{position:static} }
+
+/* ---------- phone ---------- */
+.phone{width:min(375px,100%);height:780px;padding:10px;border-radius:52px;background:var(--bezel);box-shadow:0 30px 60px -30px rgba(17,19,24,.45)}
+.screen{position:relative;height:100%;border-radius:42px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column;isolation:isolate}
+.statusbar{flex:none;height:44px;display:flex;align-items:center;justify-content:space-between;padding:4px 26px 0;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.statusbar .icons{display:flex;gap:6px;align-items:center}
+.navbar{flex:none;height:44px;display:grid;grid-template-columns:96px 1fr 96px;align-items:center;padding:0 7px}
+.nav-back{width:40px;height:40px;display:grid;place-items:center;margin-left:2px}
+.nav-title{text-align:center;font-size:16.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.capsule{justify-self:end;width:87px;height:32px;border-radius:16px;border:.5px solid var(--line);background:var(--surface);display:grid;grid-template-columns:1fr 1px 1fr;align-items:center;justify-items:center}
+.capsule i{width:1px;height:18px;background:var(--line)}
+.view{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+.view::-webkit-scrollbar{display:none}
+.tabbar{flex:none;display:grid;grid-template-columns:1fr 1fr;border-top:.5px solid var(--line);background:var(--surface);padding:6px 0 22px}
+.tab{display:grid;justify-items:center;gap:2px;font-size:11px;color:var(--dim)}
+.tab[aria-selected="true"]{color:var(--fg)}
+.home-ind{position:absolute;left:50%;bottom:7px;width:128px;height:5px;margin-left:-64px;border-radius:3px;background:var(--fg);opacity:.85;z-index:30;pointer-events:none}
+
+/* ---------- home ---------- */
+.home{padding:6px 16px 24px;display:grid;gap:22px}
+.cont{background:var(--deep);color:var(--on-deep);border-radius:22px;padding:18px 18px 16px;display:grid;gap:12px}
+.cont-label{font-size:12px;letter-spacing:.06em;opacity:.7}
+.cont-title{margin:0;font-family:var(--f-read);font-size:25px;line-height:1.2;font-weight:600}
+.cont-sub{font-size:13px;opacity:.78;margin-top:2px}
+.miniwave{display:flex;align-items:center;gap:2px;height:30px}
+.miniwave i{flex:1;border-radius:1px;background:var(--deep-2);height:calc(var(--h)*100%)}
+.miniwave i.p{background:var(--hl-strong)}
+.cont-foot{display:flex;align-items:center;justify-content:space-between}
+.cont-play{display:flex;align-items:center;gap:8px;background:var(--on-deep);color:var(--deep);border-radius:999px;padding:8px 16px 8px 12px;font-weight:600;font-size:14px}
+.cont-left{font-size:12.5px;opacity:.7;font-variant-numeric:tabular-nums}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between}
+.sec-head h2{margin:0;font-size:17px;font-weight:600}
+.sec-head span{font-size:12.5px;color:var(--dim)}
+.chips{display:flex;gap:8px;margin-top:10px}
+.chip-f{font-size:13px;padding:5px 12px;border-radius:999px;background:var(--surface-2);color:var(--fg-2)}
+.chip-f[aria-pressed="true"]{background:var(--ink);color:var(--on-ink)}
+.mlist{list-style:none;margin:4px 0 0;padding:0}
+.mrow{width:100%;display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 0;border-bottom:.5px solid var(--line);text-align:left}
+.tile{width:52px;height:52px;border-radius:14px;background:var(--surface-2);display:flex;align-items:center;gap:1.5px;padding:0 8px}
+.tile i{flex:1;border-radius:1px;background:var(--wave-cur);height:calc(var(--h)*70%)}
+.tile i.p{background:var(--fg)}
+.m-title{font-family:var(--f-read);font-size:16.5px;font-weight:600;line-height:1.3}
+.m-zh{font-size:13px;color:var(--fg-2)}
+.m-meta{font-size:12px;color:var(--dim);display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:3px;font-variant-numeric:tabular-nums}
+.m-meta .off{display:inline-flex;align-items:center;gap:3px;color:var(--good)}
+.status{font-size:12px;display:grid;justify-items:center;gap:2px;color:var(--fg-2);min-width:42px}
+.status.done{color:var(--good)}
+.status .new{font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--fg-2)}
+.ring{--p:0;width:28px;height:28px;border-radius:50%;background:conic-gradient(var(--fg) calc(var(--p)*1%),var(--wave) 0);display:grid;place-items:center}
+.ring::after{content:"";width:22px;height:22px;border-radius:50%;background:var(--bg)}
+
+/* ---------- player ---------- */
+.player{display:flex;flex-direction:column;flex:1;min-height:0;position:relative}
+.pl-bar{flex:none;display:flex;align-items:center;justify-content:space-between;padding:4px 16px 8px}
+.seg{display:grid;grid-template-columns:repeat(3,auto);background:var(--surface-2);border-radius:10px;padding:3px}
+.seg button{font-size:13px;padding:4px 13px;border-radius:8px;color:var(--fg-2)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);font-weight:600;box-shadow:0 1px 2px rgba(17,19,24,.12)}
+.counter{font-size:12.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+.tip{flex:none;margin:0 16px 6px;padding:8px 10px 8px 12px;border-radius:12px;background:var(--surface-2);font-size:12.5px;color:var(--fg-2);display:flex;align-items:center;gap:8px}
+.tip mark{background:linear-gradient(to top,transparent .1em,var(--hl) .1em,var(--hl) .55em,transparent .55em);color:var(--fg);padding:0 1px}
+.tip button{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--fg);padding:2px 4px;flex:none}
+.cues{position:relative;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;padding:4px 0 320px}
+.cues::-webkit-scrollbar{display:none}
+.cue{padding:12px 22px;cursor:pointer;position:relative}
+.cue-meta{display:flex;align-items:center;gap:8px;font-size:11.5px;letter-spacing:.04em;color:var(--dim);margin-bottom:3px}
+.spk{font-weight:600}
+.spk-A{color:var(--spk-a)} .spk-B{color:var(--spk-b)}
+.ts{font-family:var(--f-num);font-size:11px;color:var(--dim);display:flex;align-items:center;gap:5px;padding:2px 0}
+.eq{display:none;align-items:flex-end;gap:1.5px;height:10px}
+.eq i{width:2px;background:var(--fg);border-radius:1px;height:40%;animation:eq 0.9s ease-in-out infinite}
+.eq i:nth-child(2){animation-delay:-.3s} .eq i:nth-child(3){animation-delay:-.6s}
+@keyframes eq{0%,100%{height:30%}50%{height:100%}}
+.screen.paused .eq i{animation-play-state:paused}
+.cue.active .eq{display:flex}
+.cue.active .ts{color:var(--fg)}
+.en{margin:0;font-family:var(--f-read);font-size:17.5px;line-height:1.55;color:var(--dim);transition:color .25s}
+.zh{margin:4px 0 0;font-size:13.5px;line-height:1.55;color:var(--dim);transition:color .25s}
+.cue.active .en{color:var(--fg)}
+.cue.active .zh{color:var(--fg-2)}
+.w{border-radius:3px;transition:background .15s}
+.w:hover{background:var(--surface-2)}
+.ann{--c:var(--hl-dim);background:linear-gradient(to top,transparent .06em,var(--c) .06em,var(--c) .52em,transparent .52em);-webkit-box-decoration-break:clone;box-decoration-break:clone;border-radius:2px}
+.ann .w:hover{background:none}
+.cue.active .ann{--c:var(--hl)}
+.ann.on,.w.on{background:var(--hl-strong);--c:transparent}
+.cues.en-only .zh{display:none}
+.cues.blind .cue:not(.revealed) .en,.cues.blind .cue:not(.revealed) .zh{filter:blur(6px);user-select:none;pointer-events:none}
+.reveal{display:none;position:absolute;left:50%;top:50%;transform:translate(-50%,-30%);font-size:12px;background:var(--ink);color:var(--on-ink);padding:4px 10px;border-radius:999px;white-space:nowrap;pointer-events:none}
+.cues.blind .cue.active:not(.revealed) .reveal{display:block}
+.follow{position:absolute;left:50%;bottom:212px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:8px 14px;border-radius:999px;background:var(--ink);color:var(--on-ink);box-shadow:0 6px 16px -6px rgba(17,19,24,.5);z-index:5}
+.dock{flex:none;border-top:.5px solid var(--line);background:var(--bg);padding:12px 18px 26px;display:grid;gap:4px}
+.wave{height:38px;display:flex;align-items:center;gap:1.5px;cursor:pointer;touch-action:none}
+.wave i{flex:1;border-radius:1px;background:var(--wave);height:calc(var(--h)*100%);pointer-events:none}
+.wave i.c{background:var(--wave-cur)}
+.wave.loop i.c{background:var(--hl-strong)}
+.wave i.p{background:var(--fg)}
+.times{display:flex;justify-content:space-between;font-family:var(--f-num);font-size:11px;color:var(--dim)}
+.ctrls{display:grid;grid-template-columns:repeat(5,1fr);align-items:start;justify-items:center;margin-top:4px}
+.cb{display:grid;justify-items:center;gap:3px;font-size:10.5px;color:var(--dim)}
+.cb .ic{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;color:var(--fg)}
+.cb .rate{font-family:var(--f-num);font-size:13.5px;font-weight:600}
+.cb[aria-pressed="true"] .ic{background:var(--hl-strong)}
+.cb[aria-pressed="true"]{color:var(--fg)}
+.play{width:60px;height:60px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;margin-top:-6px}
+
+/* ---------- sheet ---------- */
+.scrim{position:absolute;inset:0;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity .25s;z-index:20}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:80%;background:var(--surface);border-radius:22px 22px 0 0;z-index:21;display:flex;flex-direction:column;transform:translateY(102%);transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility 0s linear .3s;visibility:hidden}
+.sheet.show{transform:none;visibility:visible;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.handle{flex:none;width:38px;height:5px;border-radius:3px;background:var(--line);margin:8px auto 0}
+.sh-body{overflow-y:auto;padding:12px 22px 14px;display:grid;gap:14px;scrollbar-width:none}
+.sh-top{display:flex;align-items:center;gap:8px}
+.tchip{font-size:11.5px;padding:2px 8px;border-radius:6px;background:var(--surface-2);color:var(--fg-2)}
+.pos{font-family:var(--f-read);font-style:italic;font-size:13px;color:var(--dim)}
+.sh-nav{margin-left:auto;display:flex;align-items:center;gap:2px;font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+.sh-nav button{width:30px;height:30px;display:grid;place-items:center;border-radius:8px;color:var(--fg)}
+.sh-nav button:disabled{color:var(--line);cursor:default}
+.headword{margin:0;font-family:var(--f-read);font-size:30px;line-height:1.15;font-weight:600;text-wrap:balance}
+.pron{display:flex;align-items:center;gap:10px;margin-top:4px}
+.ipa{font-family:var(--f-read);font-size:15px;color:var(--fg-2)}
+.say{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:var(--fg-2);padding:4px 10px 4px 8px;border-radius:999px;background:var(--surface-2)}
+.def-zh{margin:0;font-size:18px;font-weight:600;line-height:1.45}
+.def-en{margin:2px 0 0;font-family:var(--f-read);font-style:italic;font-size:14.5px;color:var(--fg-2)}
+.blk{display:grid;gap:4px;padding-top:12px;border-top:.5px solid var(--line)}
+.blk h3{margin:0;font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--dim)}
+.blk p{margin:0}
+.src-en,.ex-en{font-family:var(--f-read);font-size:15.5px;line-height:1.5}
+.src-en mark{background:var(--hl-strong);color:inherit;border-radius:2px;padding:0 1px}
+.src-zh,.ex-zh{font-size:13px;color:var(--fg-2)}
+.note{font-size:13.5px;color:var(--fg-2)}
+.linkbtn{justify-self:start;display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:13px;font-weight:600;padding:6px 12px 6px 10px;border-radius:999px;border:1px solid var(--line)}
+.sh-foot{flex:none;padding:10px 22px 28px;border-top:.5px solid var(--line)}
+.save{width:100%;height:46px;border-radius:14px;background:var(--ink);color:var(--on-ink);font-weight:600;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px}
+.save.saved{background:var(--surface-2);color:var(--fg)}
+.save.saved svg{fill:var(--hl-strong);stroke:var(--fg)}
+.miss{font-size:13.5px;color:var(--fg-2);margin:0}
+
+/* ---------- vocab ---------- */
+.vocab{padding:6px 16px 24px}
+.vlist{list-style:none;margin:8px 0 0;padding:0}
+.vrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;border-bottom:.5px solid var(--line)}
+.vmain{text-align:left;padding:14px 0;display:grid;gap:2px}
+.v-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.v-head b{font-family:var(--f-read);font-size:17px;font-weight:600}
+.v-zh{font-size:13.5px}
+.v-src{font-size:12px;color:var(--dim)}
+.unstar{width:40px;height:40px;display:grid;place-items:center;border-radius:10px}
+.unstar svg{fill:var(--hl-strong);stroke:var(--fg)}
+.empty{padding:48px 12px;text-align:center;color:var(--fg-2);font-size:13.5px}
+.empty b{display:block;font-size:15px;color:var(--fg);margin-bottom:4px}
+
+.toast{position:absolute;left:50%;bottom:222px;transform:translate(-50%,8px);background:var(--ink);color:var(--on-ink);font-size:13px;padding:8px 14px;border-radius:12px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:40;display:flex;gap:12px;align-items:center;white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast button{font-weight:600;color:var(--hl-strong)}
+
+/* ---------- notes ---------- */
+.notes{display:grid;gap:30px;min-width:0;max-width:640px;padding-top:44px}
+.notes section{display:grid;gap:10px}
+.notes h2{margin:0;font-size:18px;font-weight:700}
+.notes p{margin:0;color:var(--fg-2)}
+.notes ul,.notes ol{margin:0;padding-left:20px;color:var(--fg-2);display:grid;gap:6px}
+.notes b{color:var(--fg);font-weight:600}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px}
+.flow span{padding:4px 10px;border-radius:8px;background:var(--surface);border:1px solid var(--line)}
+.flow i{font-style:normal;color:var(--dim)}
+.gest{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:8px 18px;margin:0;font-size:13.5px}
+.gest dt{font-weight:600}
+.gest dd{margin:0;color:var(--fg-2)}
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.sw div{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--fg-2)}
+.sw i{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);flex:none}
+.sample{font-family:var(--f-read);font-size:17px;color:var(--fg)}
+.sample .ann{--c:var(--hl)}
+code{font-family:var(--f-num);font-size:12.5px;background:var(--surface);border:1px solid var(--line);padding:1px 5px;border-radius:5px}
+@media (prefers-reduced-motion:reduce){ *{transition:none!important;animation:none!important} }
+</style>
+
+<div class="page">
+  <header class="page-head">
+    <p class="eyebrow">微信小程序 · 交互原型 v0.1</p>
+    <h1>磨耳朵 <em>listen, tap, understand</em></h1>
+    <p class="lede">听 2–5 分钟的英语对话，点字幕里的词或短语看释义。左边的手机可以直接操作，音频、字幕和释义都是生成的模拟材料。</p>
+  </header>
+
+  <div class="stage">
+    <div class="proto">
+      <div class="jump" role="toolbar" aria-label="快速查看">
+        <span>快速查看</span>
+        <button data-jump="home">首页</button>
+        <button data-jump="player">播放页</button>
+        <button data-jump="sheet">释义弹层</button>
+        <button data-jump="blind">盲听模式</button>
+        <button data-jump="vocab">生词本</button>
+      </div>
+      <div class="phone">
+        <div class="screen paused" id="screen">
+          <div class="statusbar"><span>9:41</span><span class="icons">
+            <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.3-1.3A10.3 10.3 0 0 0 8 .4 10.3 10.3 0 0 0 .7 3.3L2 4.6a8.5 8.5 0 0 1 6-2.4zm0 3.6c1.3 0 2.5.5 3.4 1.3l1.3-1.3A6.6 6.6 0 0 0 8 4a6.6 6.6 0 0 0-4.7 1.8l1.3 1.3c.9-.8 2.1-1.3 3.4-1.3zm0 3.6c-.5 0-1 .2-1.3.5L8 11.2l1.3-1.3c-.3-.3-.8-.5-1.3-.5z"/></svg>
+            <svg width="26" height="12" viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3" fill="none" stroke="currentColor" opacity=".45"/><rect x="2" y="2" width="17" height="8" rx="1.6" fill="currentColor"/><rect x="24" y="4" width="1.6" height="4" rx=".8" fill="currentColor" opacity=".45"/></svg>
+          </span></div>
+          <div class="navbar">
+            <div><button class="nav-back" id="back" aria-label="返回" hidden><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button></div>
+            <div class="nav-title" id="navTitle">磨耳朵</div>
+            <div class="capsule" aria-hidden="true">
+              <svg width="20" height="6" viewBox="0 0 20 6" fill="currentColor"><circle cx="3" cy="3" r="2.2"/><circle cx="10" cy="3" r="3"/><circle cx="17" cy="3" r="2.2"/></svg><i></i>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="9" r="7.2"/><circle cx="9" cy="9" r="2.6" fill="currentColor" stroke="none"/></svg>
+            </div>
+          </div>
+
+          <main class="view" id="v-home"><div class="empty" style="padding-top:120px"><b>这里需要运行脚本</b>当前的查看器没有运行页面脚本。请用 Chrome 或 Safari 打开这个文件，或访问在线版：claude.ai/artifact/NKiPRjw6n2cNNcRP1MLQsA</div></main>
+
+          <main class="player" id="v-player" hidden>
+            <div class="pl-bar">
+              <div class="seg" role="group" aria-label="字幕模式">
+                <button data-mode="bi">双语</button><button data-mode="en">英文</button><button data-mode="blind">盲听</button>
+              </div>
+              <span class="counter" id="counter"></span>
+            </div>
+            <div class="tip" id="tip" hidden><span>点<mark>荧光标记</mark>的词或短语看释义，点句子从这句开始播</span><button id="tipOk">知道了</button></div>
+            <div class="cues" id="cues"></div>
+            <button class="follow" id="follow" hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>回到当前句</button>
+            <div class="dock">
+              <div class="wave" id="wave" aria-label="播放进度，点按或拖动跳转"></div>
+              <div class="times"><span id="tNow">0:00</span><span id="tDur">0:00</span></div>
+              <div class="ctrls">
+                <button class="cb" id="rate"><span class="ic"><span class="rate" id="rateTxt">1.0×</span></span>倍速</button>
+                <button class="cb" id="prev"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="4.5" y="5" width="2.4" height="14" rx="1.2"/><path d="M19 6.2v11.6a1 1 0 0 1-1.55.83L9.2 12.83a1 1 0 0 1 0-1.66l8.25-5.8A1 1 0 0 1 19 6.2z"/></svg></span>上一句</button>
+                <button class="play" id="play" aria-label="播放"></button>
+                <button class="cb" id="next"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="17.1" y="5" width="2.4" height="14" rx="1.2"/><path d="M5 6.2v11.6a1 1 0 0 0 1.55.83l8.25-5.8a1 1 0 0 0 0-1.66L6.55 5.37A1 1 0 0 0 5 6.2z"/></svg></span>下一句</button>
+                <button class="cb" id="loop" aria-pressed="false"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l3 3-3 3"/><path d="M4 12v-1.5A4.5 4.5 0 0 1 8.5 6H20"/><path d="M7 21l-3-3 3-3"/><path d="M20 12v1.5a4.5 4.5 0 0 1-4.5 4.5H4"/><path d="M11 10.5l1.5-1v5"/></svg></span>单句循环</button>
+              </div>
+            </div>
+          </main>
+
+          <main class="view" id="v-vocab" hidden></main>
+
+          <nav class="tabbar" id="tabbar">
+            <button class="tab" data-tab="home"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.5" height="6.5" rx="1.5"/><rect x="16.5" y="14" width="4.5" height="6.5" rx="1.5"/></svg>材料</button>
+            <button class="tab" data-tab="vocab"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3.5h12v17l-6-4-6 4z"/></svg>生词本</button>
+          </nav>
+
+          <div class="scrim" id="scrim"></div>
+          <section class="sheet" id="sheet" role="dialog" aria-label="释义"><div class="handle"></div><div class="sh-body" id="shBody"></div><div class="sh-foot" id="shFoot"></div></section>
+          <div class="toast" id="toast" role="status"></div>
+          <div class="home-ind"></div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="notes">
+      <section>
+        <h2>设计取向</h2>
+        <p>核心动作只有一个：<b>边听边点</b>。所以播放页把字幕放在最大的区域，控制按钮集中在拇指够得到的底部。点词查释义时音频自动暂停，关掉弹层接着播，听的节奏不会被打断。</p>
+      </section>
+
+      <section>
+        <h2>页面结构</h2>
+        <div class="flow"><span>材料（首页）</span><i>→</i><span>播放页</span><i>→</i><span>释义弹层</span></div>
+        <div class="flow"><span>生词本</span><i>→</i><span>释义弹层</span><i>→</i><span>去原文听</span></div>
+        <p>底部只有两个 Tab：材料和生词本。首页顶部的「继续听」直接回到上次停下的那句。</p>
+      </section>
+
+      <section>
+        <h2>播放页的操作</h2>
+        <dl class="gest">
+          <dt>点荧光标记</dt><dd>弹出释义，音频暂停；关闭后继续播放。短语里任意一个词都能点</dd>
+          <dt>点没有标记的词</dt><dd>显示“未收录”，可以听发音。要不要接词典见下方待确认</dd>
+          <dt>点句子其他地方</dt><dd>从这句开头开始播</dd>
+          <dt>点或拖波形</dt><dd>跳到任意位置。深色是已播，灰色是当前句的范围</dd>
+          <dt>上一句 / 下一句</dt><dd>按句跳。句子播到一半时点上一句，先回到本句开头</dd>
+          <dt>单句循环</dt><dd>当前句反复播，适合跟读。波形上循环的范围变成黄色</dd>
+          <dt>倍速</dt><dd>1.0× → 0.75× → 0.5× → 1.25× 循环切换</dd>
+          <dt>手动滚动字幕</dt><dd>暂停自动跟随，出现「回到当前句」</dd>
+          <dt>电脑上预览</dt><dd>空格播放或暂停，← → 切换句子</dd>
+        </dl>
+      </section>
+
+      <section>
+        <h2>三种字幕模式</h2>
+        <ul>
+          <li><b>双语</b>：英文加中文，第一遍听时用。</li>
+          <li><b>英文</b>：隐藏中文，逼自己看英文理解。</li>
+          <li><b>盲听</b>：字幕模糊，只听。没听懂的句子点一下再显示。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>视觉</h2>
+        <p>荧光笔黄<b>只用来标“可以点的词”</b>，不用在别处，所以一眼就能看出哪里有释义。当前句靠文字深浅区分，不加色块，减少干扰。英文用衬线体 Literata，读起来像书页；中文和界面用系统字体。</p>
+        <p class="sample">We need to get <span class="ann">on the same page</span> first.</p>
+        <div class="sw">
+          <div><i style="background:var(--bg)"></i>纸面背景</div>
+          <div><i style="background:var(--ink)"></i>墨色 · 主按钮</div>
+          <div><i style="background:var(--hl-strong)"></i>荧光黄 · 标注</div>
+          <div><i style="background:var(--dim)"></i>非当前句</div>
+          <div><i style="background:var(--spk-a)"></i>说话人 A</div>
+          <div><i style="background:var(--spk-b)"></i>说话人 B</div>
+        </div>
+        <p>播放页底部的波形来自真实音频，能看出哪里有人说话、哪里是句间停顿。深色模式已同步设计。</p>
+      </section>
+
+      <section>
+        <h2>模拟材料</h2>
+        <p>3 段原创对话，用 macOS 自带的英文语音逐句合成后拼接，所以 SRT 的时间轴是精确的。48kbps 单声道，85 秒的音频约 0.5MB。每句的标注由脚本自动对齐到具体的词和短语。</p>
+      </section>
+
+      <section>
+        <h2>落地到小程序</h2>
+        <ul>
+          <li>音频用 <code>InnerAudioContext</code>；如果要锁屏继续播，换成 <code>BackgroundAudioManager</code>。</li>
+          <li>字幕列表用 <code>scroll-view</code> 的 <code>scroll-into-view</code> 跟随当前句。</li>
+          <li>学习进度和生词本存在本地（<code>wx.setStorageSync</code>）。</li>
+          <li>材料 JSON 打包在分包里，音频走 GitHub + jsDelivr。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>需要你确认</h2>
+        <ol>
+          <li>没有标注的词，点了要不要显示词典释义？需要把一份精简词典打进包里。</li>
+          <li>要不要支持锁屏和后台继续播放？</li>
+          <li>生词本要不要加「复习」，比如卡片翻面、按原句重听？</li>
+          <li>小程序里用 Literata 需要从网络加载字体（约 100KB），也可以直接用系统字体。</li>
+        </ol>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<audio id="audio" preload="auto"></audio>
+
+<script>
+const DATA = [{"id":"m1","title":"Running Late","zh":"差点迟到","level":"B1","topic":"职场","speakers":{"A":"Emma","B":"Jack"},"audio":"audio/m1.mp4","duration":84.85,"peaks":[0.84,0.74,0.86,0.99,0.89,0.58,0.78,0.66,0.77,0.66,0.74,0.71,0.71,0.28,0.93,0.92,0.93,0.63,0.78,0.62,0.77,0.81,0.79,0.65,0.66,0.84,0.87,0.68,0.9,0.84,0.62,0.79,0.71,0.82,0.75,0.62,0.87,0.78,0.88,0.86,0.89,0.96,0.95,0.31,0.72,0.85,0.75,0.7,0.77,0.92,0.96,0.86,0.56,0.8,0.75,0.6,0.9,0.8,0.69,0.45,0.87,1.0,0.92,0.91,0.9,0.75,0.59,0.46,0.77,0.83,0.76,0.38,0.8,0.79,0.87,0.92,0.96,0.83,0.47,0.6,0.8,0.83,0.76,0.33,0.87,0.77,0.86,0.93,0.92,0.81,0.63,0.57,0.8,0.71,0.6,0.77,0.6,0.91,0.82,0.9,0.88,0.88,0.58,0.75,0.63,0.59,0.82,0.69,0.57,0.99,0.78,0.79,0.89,0.94,0.58,0.57,0.81,0.86,0.71,0.26],"cues":[{"spk":"A","start":0.4,"end":3.516,"en":"Morning, Jack! You look like you ran all the way here.","zh":"早啊，Jack！你看起来像是一路跑过来的。","tokens":[{"w":"Morning","p":", "},{"w":"Jack","p":"! "},{"w":"You","p":" "},{"w":"look","p":" "},{"w":"like","p":" "},{"w":"you","p":" "},{"w":"ran","p":" "},{"w":"all","p":" "},{"w":"the","p":" "},{"w":"way","p":" "},{"w":"here","p":"."}],"anns":[]},{"spk":"B","start":4.066,"end":9.458,"en":"I basically did. The subway was packed, and then it just stopped between two stations.","zh":"差不多吧。地铁挤满了人，然后还直接停在两站中间了。","tokens":[{"w":"I","p":" "},{"w":"basically","p":" "},{"w":"did","p":". "},{"w":"The","p":" "},{"w":"subway","p":" "},{"w":"was","p":" "},{"w":"packed","p":", "},{"w":"and","p":" "},{"w":"then","p":" "},{"w":"it","p":" "},{"w":"just","p":" "},{"w":"stopped","p":" "},{"w":"between","p":" "},{"w":"two","p":" "},{"w":"stations","p":"."}],"anns":[{"s":6,"e":6,"id":"packed"}]},{"spk":"A","start":10.008,"end":12.081,"en":"Oh no. How long were you stuck?","zh":"天哪。你被困了多久？","tokens":[{"w":"Oh","p":" "},{"w":"no","p":". "},{"w":"How","p":" "},{"w":"long","p":" "},{"w":"were","p":" "},{"w":"you","p":" "},{"w":"stuck","p":"?"}],"anns":[{"s":6,"e":6,"id":"stuck"}]},{"spk":"B","start":12.631,"end":16.964,"en":"Almost twenty minutes. I thought I was going to miss the meeting completely.","zh":"快二十分钟。我还以为要完全错过会议了。","tokens":[{"w":"Almost","p":" "},{"w":"twenty","p":" "},{"w":"minutes","p":". "},{"w":"I","p":" "},{"w":"thought","p":" "},{"w":"I","p":" "},{"w":"was","p":" "},{"w":"going","p":" "},{"w":"to","p":" "},{"w":"miss","p":" "},{"w":"the","p":" "},{"w":"meeting","p":" "},{"w":"completely","p":"."}],"anns":[]},{"spk":"A","start":17.514,"end":21.104,"en":"Well, you cut it pretty close. It starts in five minutes.","zh":"嗯，你这可真是卡着点到的。还有五分钟就开始了。","tokens":[{"w":"Well","p":", "},{"w":"you","p":" "},{"w":"cut","p":" "},{"w":"it","p":" "},{"w":"pretty","p":" "},{"w":"close","p":". "},{"w":"It","p":" "},{"w":"starts","p":" "},{"w":"in","p":" "},{"w":"five","p":" "},{"w":"minutes","p":"."}],"anns":[{"s":2,"e":5,"id":"cut-it-close"}]},{"spk":"B","start":21.654,"end":25.205,"en":"Tell me about it. Did I miss anything important this morning?","zh":"可不是嘛。今天早上我错过什么重要的事了吗？","tokens":[{"w":"Tell","p":" "},{"w":"me","p":" "},{"w":"about","p":" "},{"w":"it","p":". "},{"w":"Did","p":" "},{"w":"I","p":" "},{"w":"miss","p":" "},{"w":"anything","p":" "},{"w":"important","p":" "},{"w":"this","p":" "},{"w":"morning","p":"?"}],"anns":[{"s":0,"e":3,"id":"tell-me-about-it"}]},{"spk":"A","start":25.755,"end":30.533,"en":"Not really. Sarah just gave us a heads-up that the client wants to move the deadline up.","zh":"没什么。Sarah 刚提醒我们，客户想把截止日期提前。","tokens":[{"w":"Not","p":" "},{"w":"really","p":". "},{"w":"Sarah","p":" "},{"w":"just","p":" "},{"w":"gave","p":" "},{"w":"us","p":" "},{"w":"a","p":" "},{"w":"heads-up","p":" "},{"w":"that","p":" "},{"w":"the","p":" "},{"w":"client","p":" "},{"w":"wants","p":" "},{"w":"to","p":" "},{"w":"move","p":" "},{"w":"the","p":" "},{"w":"deadline","p":" "},{"w":"up","p":"."}],"anns":[{"s":7,"e":7,"id":"heads-up"},{"s":13,"e":16,"id":"move-sth-up"}]},{"spk":"B","start":31.083,"end":33.234,"en":"Move it up? You mean they want it sooner?","zh":"提前？你是说他们想早点要？","tokens":[{"w":"Move","p":" "},{"w":"it","p":" "},{"w":"up","p":"? "},{"w":"You","p":" "},{"w":"mean","p":" "},{"w":"they","p":" "},{"w":"want","p":" "},{"w":"it","p":" "},{"w":"sooner","p":"?"}],"anns":[{"s":0,"e":2,"id":"move-sth-up"}]},{"spk":"A","start":33.784,"end":36.691,"en":"Yep. Next Friday instead of the end of the month.","zh":"对。下周五，而不是月底。","tokens":[{"w":"Yep","p":". "},{"w":"Next","p":" "},{"w":"Friday","p":" "},{"w":"instead","p":" "},{"w":"of","p":" "},{"w":"the","p":" "},{"w":"end","p":" "},{"w":"of","p":" "},{"w":"the","p":" "},{"w":"month","p":"."}],"anns":[]},{"spk":"B","start":37.241,"end":41.824,"en":"That's a lot to take in before coffee. We're already swamped with the other project.","zh":"咖啡还没喝就要消化这么多信息。我们手上另一个项目已经忙得不可开交了。","tokens":[{"w":"That's","p":" "},{"w":"a","p":" "},{"w":"lot","p":" "},{"w":"to","p":" "},{"w":"take","p":" "},{"w":"in","p":" "},{"w":"before","p":" "},{"w":"coffee","p":". "},{"w":"We're","p":" "},{"w":"already","p":" "},{"w":"swamped","p":" "},{"w":"with","p":" "},{"w":"the","p":" "},{"w":"other","p":" "},{"w":"project","p":"."}],"anns":[{"s":4,"e":5,"id":"take-in"},{"s":10,"e":10,"id":"swamped"}]},{"spk":"A","start":42.374,"end":46.422,"en":"I know. That's why we need to get on the same page before we talk to them.","zh":"我知道。所以我们得在跟他们谈之前先统一想法。","tokens":[{"w":"I","p":" "},{"w":"know","p":". "},{"w":"That's","p":" "},{"w":"why","p":" "},{"w":"we","p":" "},{"w":"need","p":" "},{"w":"to","p":" "},{"w":"get","p":" "},{"w":"on","p":" "},{"w":"the","p":" "},{"w":"same","p":" "},{"w":"page","p":" "},{"w":"before","p":" "},{"w":"we","p":" "},{"w":"talk","p":" "},{"w":"to","p":" "},{"w":"them","p":"."}],"anns":[{"s":8,"e":11,"id":"on-the-same-page"}]},{"spk":"B","start":46.972,"end":50.505,"en":"Makes sense. Should we figure out who's doing what first?","zh":"有道理。要不要先把分工定下来？","tokens":[{"w":"Makes","p":" "},{"w":"sense","p":". "},{"w":"Should","p":" "},{"w":"we","p":" "},{"w":"figure","p":" "},{"w":"out","p":" "},{"w":"who's","p":" "},{"w":"doing","p":" "},{"w":"what","p":" "},{"w":"first","p":"?"}],"anns":[{"s":4,"e":5,"id":"figure-out"}]},{"spk":"A","start":51.055,"end":55.091,"en":"Exactly. I can take care of the design part if you handle the report.","zh":"没错。你负责报告的话，设计部分我来搞定。","tokens":[{"w":"Exactly","p":". "},{"w":"I","p":" "},{"w":"can","p":" "},{"w":"take","p":" "},{"w":"care","p":" "},{"w":"of","p":" "},{"w":"the","p":" "},{"w":"design","p":" "},{"w":"part","p":" "},{"w":"if","p":" "},{"w":"you","p":" "},{"w":"handle","p":" "},{"w":"the","p":" "},{"w":"report","p":"."}],"anns":[{"s":3,"e":5,"id":"take-care-of"}]},{"spk":"B","start":55.641,"end":58.999,"en":"Deal. But I might need you to give me a hand with the numbers.","zh":"成交。不过数据那块我可能需要你帮我一把。","tokens":[{"w":"Deal","p":". "},{"w":"But","p":" "},{"w":"I","p":" "},{"w":"might","p":" "},{"w":"need","p":" "},{"w":"you","p":" "},{"w":"to","p":" "},{"w":"give","p":" "},{"w":"me","p":" "},{"w":"a","p":" "},{"w":"hand","p":" "},{"w":"with","p":" "},{"w":"the","p":" "},{"w":"numbers","p":"."}],"anns":[{"s":0,"e":0,"id":"deal"},{"s":7,"e":10,"id":"give-sb-a-hand"}]},{"spk":"A","start":59.549,"end":63.445,"en":"No problem. Let's touch base after lunch and see how far we get.","zh":"没问题。午饭后我们碰一下，看看进展到哪儿了。","tokens":[{"w":"No","p":" "},{"w":"problem","p":". "},{"w":"Let's","p":" "},{"w":"touch","p":" "},{"w":"base","p":" "},{"w":"after","p":" "},{"w":"lunch","p":" "},{"w":"and","p":" "},{"w":"see","p":" "},{"w":"how","p":" "},{"w":"far","p":" "},{"w":"we","p":" "},{"w":"get","p":"."}],"anns":[{"s":3,"e":4,"id":"touch-base"}]},{"spk":"B","start":63.995,"end":67.955,"en":"Sounds good. And if the client pushes back, what do we say?","zh":"好的。那如果客户不同意，我们怎么说？","tokens":[{"w":"Sounds","p":" "},{"w":"good","p":". "},{"w":"And","p":" "},{"w":"if","p":" "},{"w":"the","p":" "},{"w":"client","p":" "},{"w":"pushes","p":" "},{"w":"back","p":", "},{"w":"what","p":" "},{"w":"do","p":" "},{"w":"we","p":" "},{"w":"say","p":"?"}],"anns":[{"s":6,"e":7,"id":"push-back"}]},{"spk":"A","start":68.505,"end":72.35,"en":"We tell them the truth. We can do it, but something else has to give.","zh":"实话实说。我们能做到，但别的事就得让一让。","tokens":[{"w":"We","p":" "},{"w":"tell","p":" "},{"w":"them","p":" "},{"w":"the","p":" "},{"w":"truth","p":". "},{"w":"We","p":" "},{"w":"can","p":" "},{"w":"do","p":" "},{"w":"it","p":", "},{"w":"but","p":" "},{"w":"something","p":" "},{"w":"else","p":" "},{"w":"has","p":" "},{"w":"to","p":" "},{"w":"give","p":"."}],"anns":[{"s":10,"e":14,"id":"something-has-to-give"}]},{"spk":"B","start":72.9,"end":76.439,"en":"Fair enough. Honestly, I'm glad you're on top of this.","zh":"也是。说真的，还好有你把这事盯得这么紧。","tokens":[{"w":"Fair","p":" "},{"w":"enough","p":". "},{"w":"Honestly","p":", "},{"w":"I'm","p":" "},{"w":"glad","p":" "},{"w":"you're","p":" "},{"w":"on","p":" "},{"w":"top","p":" "},{"w":"of","p":" "},{"w":"this","p":"."}],"anns":[{"s":0,"e":1,"id":"fair-enough"},{"s":6,"e":9,"id":"be-on-top-of-sth"}]},{"spk":"A","start":76.989,"end":80.826,"en":"Don't thank me yet. Grab a coffee, and let's get the ball rolling.","zh":"先别急着谢我。去拿杯咖啡，我们开工吧。","tokens":[{"w":"Don't","p":" "},{"w":"thank","p":" "},{"w":"me","p":" "},{"w":"yet","p":". "},{"w":"Grab","p":" "},{"w":"a","p":" "},{"w":"coffee","p":", "},{"w":"and","p":" "},{"w":"let's","p":" "},{"w":"get","p":" "},{"w":"the","p":" "},{"w":"ball","p":" "},{"w":"rolling","p":"."}],"anns":[{"s":9,"e":12,"id":"get-the-ball-rolling"}]},{"spk":"B","start":81.376,"end":84.247,"en":"On it. See you in the meeting room in two minutes.","zh":"马上。两分钟后会议室见。","tokens":[{"w":"On","p":" "},{"w":"it","p":". "},{"w":"See","p":" "},{"w":"you","p":" "},{"w":"in","p":" "},{"w":"the","p":" "},{"w":"meeting","p":" "},{"w":"room","p":" "},{"w":"in","p":" "},{"w":"two","p":" "},{"w":"minutes","p":"."}],"anns":[{"s":0,"e":1,"id":"on-it"}]}],"glossary":{"packed":{"head":"packed","type":"word","pos":"adj.","ipa":"/pækt/","zh":"挤满人的；爆满的","en":"very full of people","note":"口语里形容地铁、餐厅、场馆人多，比 crowded 更强调“塞满了”。","ex":["The restaurant was packed on Friday night.","周五晚上餐厅爆满。"],"id":"packed"},"stuck":{"head":"stuck","type":"word","pos":"adj.","ipa":"/stʌk/","zh":"被困住的；卡住的","en":"unable to move or leave a place","note":"常见搭配：be stuck in traffic（堵在路上）、get stuck（卡住）。","ex":["We got stuck in traffic for an hour.","我们在路上堵了一个小时。"],"id":"stuck"},"cut-it-close":{"head":"cut it close","type":"idiom","zh":"时间卡得很紧；差点来不及","en":"to leave yourself very little time to do something","note":"中间可以插入 pretty / a bit / really 等程度词：cut it a bit close。","ex":["You're cutting it close. The train leaves in two minutes.","你太卡点了，火车两分钟后就开。"],"id":"cut-it-close"},"tell-me-about-it":{"head":"Tell me about it","type":"idiom","zh":"可不是嘛；我深有同感","en":"used to say you strongly agree, usually about something unpleasant","note":"字面是“跟我说说”，但语调下降时表示强烈同意，并不是真的让对方讲。","ex":["\"This weather is awful.\" \"Tell me about it.\"","“这天气太糟了。”“可不是嘛。”"],"id":"tell-me-about-it"},"heads-up":{"head":"heads-up","type":"word","pos":"n.","ipa":"/ˈhedz ʌp/","zh":"提前提醒；预先通知","en":"a warning or notice about something that is going to happen","note":"常用 give sb a heads-up，职场口语高频词。","ex":["Thanks for the heads-up about the meeting.","谢谢你提前告诉我开会的事。"],"id":"heads-up"},"move-sth-up":{"head":"move sth up","type":"phrasal","zh":"把（时间）提前","en":"to change something to an earlier time","note":"反义是 push sth back（推迟）。宾语是代词时必须放中间：move it up，不能说 move up it。","ex":["Can we move the call up to 3 p.m.?","电话会能提前到下午三点吗？"],"id":"move-sth-up"},"take-in":{"head":"take in","type":"phrasal","zh":"理解并记住；消化（信息）","en":"to understand and remember new information","note":"a lot to take in：信息量太大，一下子消化不了。","ex":["It was a lot to take in on my first day.","第一天要消化的东西太多了。"],"id":"take-in"},"swamped":{"head":"swamped","type":"word","pos":"adj.","ipa":"/swɑːmpt/","zh":"忙得不可开交的","en":"extremely busy; having too much to do","note":"本义是“被水淹没”，比 busy 更夸张。常用 be swamped with sth。","ex":["I'm swamped with emails today.","我今天被邮件淹没了。"],"id":"swamped"},"on-the-same-page":{"head":"on the same page","type":"idiom","zh":"想法一致；达成共识","en":"agreeing about what to do or how things are","note":"常用 get on the same page（统一想法）/ be on the same page（想法一致）。","ex":["Let's make sure we're all on the same page.","我们确认一下大家想法一致。"],"id":"on-the-same-page"},"figure-out":{"head":"figure out","type":"phrasal","zh":"弄清楚；想出（办法）","en":"to understand or find the answer to something","note":"后面常接 what / how / who 从句：figure out who's doing what（弄清谁做什么）。","ex":["I can't figure out how this works.","我搞不懂这个怎么用。"],"id":"figure-out"},"take-care-of":{"head":"take care of","type":"phrasal","zh":"负责处理；搞定","en":"to deal with something that needs to be done","note":"职场中“这事交给我”的常用说法：I'll take care of it.","ex":["Don't worry, I'll take care of the tickets.","别担心，票我来搞定。"],"id":"take-care-of"},"deal":{"head":"Deal","type":"phrase","pos":"interj.","ipa":"/diːl/","zh":"成交；就这么定了","en":"used to agree to a suggestion or offer","note":"单独一个词成句，爽快答应对方提出的分工或条件。","ex":["\"You cook, I'll wash up.\" \"Deal!\"","“你做饭，我洗碗。”“成交！”"],"id":"deal"},"give-sb-a-hand":{"head":"give sb a hand","type":"idiom","zh":"帮某人一把","en":"to help someone","note":"比 help 更口语。常用 Can you give me a hand with ...?","ex":["Could you give me a hand with these boxes?","能帮我搬一下这些箱子吗？"],"id":"give-sb-a-hand"},"touch-base":{"head":"touch base","type":"idiom","zh":"碰个头；简单沟通一下","en":"to talk briefly with someone to see how things are going","note":"来自棒球术语，职场常用 touch base with sb。","ex":["I'll touch base with you tomorrow morning.","我明天上午再跟你碰一下。"],"id":"touch-base"},"push-back":{"head":"push back","type":"phrasal","zh":"反对；不接受","en":"to resist or disagree with a plan or request","note":"也有“推迟”的意思（push the meeting back），这里表示“反对”。","ex":["The team pushed back on the new policy.","团队对新政策提出了反对。"],"id":"push-back"},"something-has-to-give":{"head":"something has to give","type":"idiom","zh":"总得有所取舍；总有一样得让步","en":"a situation cannot continue without some change","note":"这里的 give 是“让步、撑不住”的意思。","ex":["I'm working two jobs and studying. Something has to give.","我打两份工还要学习，总得放弃点什么。"],"id":"something-has-to-give"},"fair-enough":{"head":"Fair enough","type":"idiom","zh":"也是；说得有道理","en":"used to accept that something is reasonable","note":"表示接受对方的理由，即使自己原本不完全同意。","ex":["\"I'm too tired to go out.\" \"Fair enough.\"","“我太累了不想出门。”“也是。”"],"id":"fair-enough"},"be-on-top-of-sth":{"head":"be on top of sth","type":"idiom","zh":"掌控；把……处理得井井有条","en":"in control of a situation or task","note":"和字面上的“在……上面”无关。","ex":["She's really on top of her work.","她把工作安排得井井有条。"],"id":"be-on-top-of-sth"},"get-the-ball-rolling":{"head":"get the ball rolling","type":"idiom","zh":"开始行动；开个头","en":"to start an activity or process","note":"常用于会议或项目开场：Let's get the ball rolling.","ex":["Let's get the ball rolling with some introductions.","我们先从自我介绍开始吧。"],"id":"get-the-ball-rolling"},"on-it":{"head":"On it","type":"phrase","zh":"马上办；这就去","en":"I'm going to do it right now","note":"I'm on it 的省略，接到任务时的爽快回应。","ex":["\"Can you send the file?\" \"On it.\"","“能把文件发一下吗？”“马上。”"],"id":"on-it"}}},{"id":"m2","title":"At the Coffee Shop","zh":"咖啡店点单","level":"A2","topic":"生活","speakers":{"A":"Barista","B":"Leo"},"audio":"audio/m2.mp4","duration":36.27,"peaks":[0.06,0.82,0.87,0.43,0.86,0.9,0.85,0.8,0.06,0.33,0.78,0.76,0.84,0.76,0.84,0.73,0.63,0.2,0.55,0.48,0.11,0.06,0.83,0.4,0.85,0.89,0.87,0.54,0.06,0.64,0.53,0.29,0.59,0.36,0.64,0.68,0.28,0.74,0.77,0.66,0.71,0.59,0.11,0.33,0.9,0.89,0.62,0.91,0.95,0.84,0.26,0.93,0.93,0.83,0.76,1.0,0.89,0.88,0.38,0.06,0.48,0.27,0.68,0.72,0.61,0.44,0.28,0.74,0.73,0.63,0.42,0.1,0.09,0.82,0.83,0.35,0.71,0.86,0.91,0.72,0.7,0.06,0.49,0.75,0.82,0.67,0.51,0.06,0.62,0.78,0.68,0.35,0.77,0.87,0.96,0.97,0.96,0.96,0.78,0.06,0.26,0.59,0.15,0.53,0.39,0.35,0.06,0.91,0.87,0.68,0.8,0.93,0.94,0.96,0.93,0.89,0.88,0.69,0.06,0.06],"cues":[{"spk":"A","start":0.4,"end":2.405,"en":"Hi there! What can I get for you?","zh":"你好！想点些什么？","tokens":[{"w":"Hi","p":" "},{"w":"there","p":"! "},{"w":"What","p":" "},{"w":"can","p":" "},{"w":"I","p":" "},{"w":"get","p":" "},{"w":"for","p":" "},{"w":"you","p":"?"}],"anns":[{"s":2,"e":7,"id":"what-can-i-get-for-you"}]},{"spk":"B","start":2.955,"end":6.091,"en":"Can I get a medium latte with oat milk, please?","zh":"我要一杯中杯燕麦奶拿铁，谢谢。","tokens":[{"w":"Can","p":" "},{"w":"I","p":" "},{"w":"get","p":" "},{"w":"a","p":" "},{"w":"medium","p":" "},{"w":"latte","p":" "},{"w":"with","p":" "},{"w":"oat","p":" "},{"w":"milk","p":", "},{"w":"please","p":"?"}],"anns":[{"s":0,"e":2,"id":"can-i-get"},{"s":7,"e":8,"id":"oat-milk"}]},{"spk":"A","start":6.641,"end":8.29,"en":"Sure. For here or to go?","zh":"好的。在这儿喝还是带走？","tokens":[{"w":"Sure","p":". "},{"w":"For","p":" "},{"w":"here","p":" "},{"w":"or","p":" "},{"w":"to","p":" "},{"w":"go","p":"?"}],"anns":[{"s":1,"e":5,"id":"for-here-or-to-go"}]},{"spk":"B","start":8.84,"end":12.731,"en":"To go, please. Actually, could you make it extra hot?","zh":"带走，谢谢。对了，能做得特别烫一点吗？","tokens":[{"w":"To","p":" "},{"w":"go","p":", "},{"w":"please","p":". "},{"w":"Actually","p":", "},{"w":"could","p":" "},{"w":"you","p":" "},{"w":"make","p":" "},{"w":"it","p":" "},{"w":"extra","p":" "},{"w":"hot","p":"?"}],"anns":[{"s":0,"e":1,"id":"to-go"},{"s":8,"e":9,"id":"extra-hot"}]},{"spk":"A","start":13.281,"end":17.63,"en":"No problem. Anything else? Our banana bread just came out of the oven.","zh":"没问题。还要别的吗？我们的香蕉面包刚出炉。","tokens":[{"w":"No","p":" "},{"w":"problem","p":". "},{"w":"Anything","p":" "},{"w":"else","p":"? "},{"w":"Our","p":" "},{"w":"banana","p":" "},{"w":"bread","p":" "},{"w":"just","p":" "},{"w":"came","p":" "},{"w":"out","p":" "},{"w":"of","p":" "},{"w":"the","p":" "},{"w":"oven","p":"."}],"anns":[{"s":8,"e":12,"id":"come-out-of-the-oven"}]},{"spk":"B","start":18.18,"end":21.509,"en":"Oh, that sounds tempting. I'll take a slice.","zh":"哦，听起来好诱人。我来一块。","tokens":[{"w":"Oh","p":", "},{"w":"that","p":" "},{"w":"sounds","p":" "},{"w":"tempting","p":". "},{"w":"I'll","p":" "},{"w":"take","p":" "},{"w":"a","p":" "},{"w":"slice","p":"."}],"anns":[{"s":3,"e":3,"id":"tempting"}]},{"spk":"A","start":22.059,"end":24.423,"en":"Great choice. That comes to eight fifty.","zh":"好选择。一共八块五。","tokens":[{"w":"Great","p":" "},{"w":"choice","p":". "},{"w":"That","p":" "},{"w":"comes","p":" "},{"w":"to","p":" "},{"w":"eight","p":" "},{"w":"fifty","p":"."}],"anns":[{"s":3,"e":4,"id":"come-to"}]},{"spk":"B","start":24.973,"end":26.276,"en":"Can I pay by card?","zh":"可以刷卡吗？","tokens":[{"w":"Can","p":" "},{"w":"I","p":" "},{"w":"pay","p":" "},{"w":"by","p":" "},{"w":"card","p":"?"}],"anns":[]},{"spk":"A","start":26.826,"end":29.922,"en":"Of course. Just tap it on the reader whenever you're ready.","zh":"当然。准备好了就在读卡器上碰一下。","tokens":[{"w":"Of","p":" "},{"w":"course","p":". "},{"w":"Just","p":" "},{"w":"tap","p":" "},{"w":"it","p":" "},{"w":"on","p":" "},{"w":"the","p":" "},{"w":"reader","p":" "},{"w":"whenever","p":" "},{"w":"you're","p":" "},{"w":"ready","p":"."}],"anns":[{"s":3,"e":3,"id":"tap"},{"s":7,"e":7,"id":"reader"}]},{"spk":"B","start":30.472,"end":31.845,"en":"Done. Thanks!","zh":"好了。谢谢！","tokens":[{"w":"Done","p":". "},{"w":"Thanks","p":"!"}],"anns":[]},{"spk":"A","start":32.395,"end":35.673,"en":"You're all set. Your order will be ready at the end of the counter.","zh":"都好了。您点的东西在柜台尽头取。","tokens":[{"w":"You're","p":" "},{"w":"all","p":" "},{"w":"set","p":". "},{"w":"Your","p":" "},{"w":"order","p":" "},{"w":"will","p":" "},{"w":"be","p":" "},{"w":"ready","p":" "},{"w":"at","p":" "},{"w":"the","p":" "},{"w":"end","p":" "},{"w":"of","p":" "},{"w":"the","p":" "},{"w":"counter","p":"."}],"anns":[{"s":0,"e":2,"id":"you-re-all-set"},{"s":13,"e":13,"id":"counter"}]}],"glossary":{"what-can-i-get-for-you":{"head":"What can I get for you?","type":"phrase","zh":"您想点什么？","en":"a common way for staff to ask for your order","note":"店员的标准开场。顾客常用 Can I get ...? 或 I'll have ... 回答。","ex":["Hi, what can I get for you today?","你好，今天想点些什么？"],"id":"what-can-i-get-for-you"},"can-i-get":{"head":"Can I get ...?","type":"phrase","zh":"我要……（点单用语）","en":"a polite, casual way to order something","note":"美式点单最常用的句型，比 I want ... 礼貌自然。","ex":["Can I get a small black coffee?","我要一杯小杯黑咖啡。"],"id":"can-i-get"},"oat-milk":{"head":"oat milk","type":"word","pos":"n.","ipa":"/ˈəʊt mɪlk/","zh":"燕麦奶","en":"a milk substitute made from oats","note":"类似的还有 almond milk（杏仁奶）、soy milk（豆奶）。","ex":["Do you have oat milk?","你们有燕麦奶吗？"],"id":"oat-milk"},"for-here-or-to-go":{"head":"For here or to go?","type":"phrase","zh":"堂食还是带走？","en":"asking if you will eat in the shop or take it away","note":"美式说法。英式常说 Eat in or take away?","ex":["\"For here or to go?\" \"For here, thanks.\"","“在这儿吃还是带走？”“在这儿吃，谢谢。”"],"id":"for-here-or-to-go"},"to-go":{"head":"to go","type":"phrase","zh":"带走；外带","en":"food or drink bought to take away","note":"也可放在名词后：a coffee to go（一杯外带咖啡）。","ex":["Two cappuccinos to go, please.","两杯卡布奇诺，带走。"],"id":"to-go"},"extra-hot":{"head":"extra hot","type":"phrase","zh":"特别烫的","en":"hotter than usual","note":"extra 在点单时表示“额外、更多”：extra shot（多加一份浓缩）、extra ice（多加冰）。","ex":["Could I have an extra shot in that?","能多加一份浓缩吗？"],"id":"extra-hot"},"come-out-of-the-oven":{"head":"come out of the oven","type":"phrase","zh":"刚出炉","en":"just finished baking","note":"just came out of the oven 强调“刚刚”出炉，很新鲜。","ex":["These cookies just came out of the oven.","这些饼干刚出炉。"],"id":"come-out-of-the-oven"},"tempting":{"head":"tempting","type":"word","pos":"adj.","ipa":"/ˈtemptɪŋ/","zh":"诱人的；让人心动的","en":"making you want to have or do something","note":"that sounds tempting 常用来回应别人的推荐。","ex":["It's tempting to stay in bed all day.","真想在床上躺一整天。"],"id":"tempting"},"come-to":{"head":"come to","type":"phrasal","zh":"总计；一共是","en":"to add up to a total amount","note":"结账时的固定说法：That comes to ...（一共……）。","ex":["Your total comes to twenty dollars.","您一共是二十美元。"],"id":"come-to"},"tap":{"head":"tap","type":"word","pos":"v.","ipa":"/tæp/","zh":"轻触；（感应支付时）碰一下","en":"to touch something lightly","note":"感应支付叫 tap to pay，比 swipe（刷卡）、insert（插卡）更常见。","ex":["You can tap your phone to pay.","你可以用手机碰一下付款。"],"id":"tap"},"reader":{"head":"reader","type":"word","pos":"n.","ipa":"/ˈriːdər/","zh":"读卡器","en":"a machine that reads payment cards","note":"完整说法是 card reader。","ex":["The card reader isn't working.","读卡器坏了。"],"id":"reader"},"you-re-all-set":{"head":"You're all set","type":"idiom","zh":"都好了；搞定了","en":"everything is ready or done","note":"服务结束时店员的常用语，意思是“您不用再做什么了”。","ex":["Here's your receipt. You're all set.","这是您的小票，都好了。"],"id":"you-re-all-set"},"counter":{"head":"counter","type":"word","pos":"n.","ipa":"/ˈkaʊntər/","zh":"柜台","en":"a long flat surface where customers are served","note":"at the counter（在柜台）；over the counter 还可指“非处方（药）”。","ex":["Please pay at the counter.","请到柜台付款。"],"id":"counter"}}},{"id":"m3","title":"Asking for Directions","zh":"问路","level":"A2","topic":"出行","speakers":{"A":"Mia","B":"Local"},"audio":"audio/m3.mp4","duration":29.0,"peaks":[0.06,0.65,0.76,0.94,0.82,0.08,0.81,0.85,1.0,0.83,0.81,0.72,0.79,0.92,0.86,0.85,0.47,0.06,0.33,0.71,0.38,0.31,0.84,0.77,0.65,0.75,0.58,0.79,0.75,0.75,0.63,0.66,0.68,0.7,0.46,0.23,0.06,0.66,0.8,0.9,0.8,0.09,0.82,0.71,0.43,0.83,0.84,0.83,0.88,0.51,0.06,0.37,0.77,0.76,0.38,0.66,0.64,0.79,0.67,0.73,0.69,0.6,0.15,0.06,0.13,0.86,0.45,0.72,0.88,0.99,0.94,0.84,0.88,0.7,0.73,0.91,0.95,0.88,0.56,0.06,0.26,0.77,0.76,0.61,0.8,0.8,0.77,0.71,0.6,0.68,0.62,0.44,0.08,0.7,0.68,0.73,0.4,0.08,0.06,0.72,0.7,0.28,0.18,0.87,0.93,0.88,0.29,0.06,0.06,0.78,0.76,0.47,0.35,0.54,0.7,0.77,0.61,0.21,0.06,0.06],"cues":[{"spk":"A","start":0.4,"end":3.961,"en":"Excuse me, could you tell me how to get to the train station?","zh":"打扰一下，能告诉我去火车站怎么走吗？","tokens":[{"w":"Excuse","p":" "},{"w":"me","p":", "},{"w":"could","p":" "},{"w":"you","p":" "},{"w":"tell","p":" "},{"w":"me","p":" "},{"w":"how","p":" "},{"w":"to","p":" "},{"w":"get","p":" "},{"w":"to","p":" "},{"w":"the","p":" "},{"w":"train","p":" "},{"w":"station","p":"?"}],"anns":[{"s":6,"e":9,"id":"how-to-get-to"}]},{"spk":"B","start":4.511,"end":8.551,"en":"Sure. Go straight down this street and turn left at the second light.","zh":"当然。沿着这条街一直走，在第二个红绿灯左转。","tokens":[{"w":"Sure","p":". "},{"w":"Go","p":" "},{"w":"straight","p":" "},{"w":"down","p":" "},{"w":"this","p":" "},{"w":"street","p":" "},{"w":"and","p":" "},{"w":"turn","p":" "},{"w":"left","p":" "},{"w":"at","p":" "},{"w":"the","p":" "},{"w":"second","p":" "},{"w":"light","p":"."}],"anns":[{"s":1,"e":2,"id":"go-straight"},{"s":7,"e":8,"id":"turn-left"}]},{"spk":"A","start":9.101,"end":11.958,"en":"The second light. Got it. Is it far from here?","zh":"第二个红绿灯，明白了。离这儿远吗？","tokens":[{"w":"The","p":" "},{"w":"second","p":" "},{"w":"light","p":". "},{"w":"Got","p":" "},{"w":"it","p":". "},{"w":"Is","p":" "},{"w":"it","p":" "},{"w":"far","p":" "},{"w":"from","p":" "},{"w":"here","p":"?"}],"anns":[{"s":3,"e":4,"id":"got-it"}]},{"spk":"B","start":12.508,"end":15.146,"en":"Not at all. It's about a ten-minute walk.","zh":"一点也不远。走路大概十分钟。","tokens":[{"w":"Not","p":" "},{"w":"at","p":" "},{"w":"all","p":". "},{"w":"It's","p":" "},{"w":"about","p":" "},{"w":"a","p":" "},{"w":"ten-minute","p":" "},{"w":"walk","p":"."}],"anns":[{"s":0,"e":2,"id":"not-at-all"},{"s":5,"e":7,"id":"a-ten-minute-walk"}]},{"spk":"A","start":15.696,"end":18.969,"en":"Great. Is there anywhere I can grab a quick bite on the way?","zh":"太好了。路上有没有地方能快速吃点东西？","tokens":[{"w":"Great","p":". "},{"w":"Is","p":" "},{"w":"there","p":" "},{"w":"anywhere","p":" "},{"w":"I","p":" "},{"w":"can","p":" "},{"w":"grab","p":" "},{"w":"a","p":" "},{"w":"quick","p":" "},{"w":"bite","p":" "},{"w":"on","p":" "},{"w":"the","p":" "},{"w":"way","p":"?"}],"anns":[{"s":6,"e":9,"id":"grab-a-quick-bite"},{"s":10,"e":12,"id":"on-the-way"}]},{"spk":"B","start":19.519,"end":23.476,"en":"There's a nice bakery right across from the station. You can't miss it.","zh":"车站正对面有家不错的面包店，你一眼就能看到。","tokens":[{"w":"There's","p":" "},{"w":"a","p":" "},{"w":"nice","p":" "},{"w":"bakery","p":" "},{"w":"right","p":" "},{"w":"across","p":" "},{"w":"from","p":" "},{"w":"the","p":" "},{"w":"station","p":". "},{"w":"You","p":" "},{"w":"can't","p":" "},{"w":"miss","p":" "},{"w":"it","p":"."}],"anns":[{"s":5,"e":6,"id":"across-from"},{"s":9,"e":12,"id":"you-can-t-miss-it"}]},{"spk":"A","start":24.026,"end":25.8,"en":"Perfect. Thanks so much!","zh":"太好了，非常感谢！","tokens":[{"w":"Perfect","p":". "},{"w":"Thanks","p":" "},{"w":"so","p":" "},{"w":"much","p":"!"}],"anns":[]},{"spk":"B","start":26.35,"end":28.396,"en":"No worries. Have a good trip!","zh":"不客气，旅途愉快！","tokens":[{"w":"No","p":" "},{"w":"worries","p":". "},{"w":"Have","p":" "},{"w":"a","p":" "},{"w":"good","p":" "},{"w":"trip","p":"!"}],"anns":[{"s":0,"e":1,"id":"no-worries"}]}],"glossary":{"how-to-get-to":{"head":"how to get to","type":"phrase","zh":"怎么去（某地）","en":"the way to reach a place","note":"问路最常用：How do I get to ...? / Could you tell me how to get to ...?","ex":["How do I get to the museum?","博物馆怎么走？"],"id":"how-to-get-to"},"go-straight":{"head":"go straight","type":"phrase","zh":"直走","en":"to continue in the same direction","note":"go straight down / along this street：沿这条街直走。","ex":["Go straight for two blocks.","直走两个街区。"],"id":"go-straight"},"turn-left":{"head":"turn left","type":"phrase","zh":"左转","en":"to change direction to the left","note":"at the second light：在第二个红绿灯处。light 指 traffic light。","ex":["Turn right at the corner.","在拐角处右转。"],"id":"turn-left"},"got-it":{"head":"Got it","type":"idiom","zh":"明白了；知道了","en":"I understand","note":"比 I understand 更口语，确认信息时常用。","ex":["\"Press the red button.\" \"Got it.\"","“按红色按钮。”“知道了。”"],"id":"got-it"},"not-at-all":{"head":"Not at all","type":"phrase","zh":"一点也不","en":"not in any way","note":"回答“远吗/麻烦吗”时表示完全不。英式英语里也可用来回应感谢。","ex":["\"Am I bothering you?\" \"Not at all.\"","“我打扰你了吗？”“一点也没有。”"],"id":"not-at-all"},"a-ten-minute-walk":{"head":"a ten-minute walk","type":"phrase","zh":"步行十分钟的距离","en":"a distance that takes ten minutes on foot","note":"ten-minute 作形容词时用单数并加连字符，不说 ten-minutes walk。","ex":["The beach is a five-minute walk from the hotel.","海滩离酒店走路五分钟。"],"id":"a-ten-minute-walk"},"grab-a-quick-bite":{"head":"grab a quick bite","type":"idiom","zh":"快速吃点东西","en":"to eat something quickly","note":"grab 在口语中表示“快速拿、随便吃点”：grab a coffee、grab lunch。","ex":["Let's grab a quick bite before the movie.","看电影前我们随便吃点吧。"],"id":"grab-a-quick-bite"},"on-the-way":{"head":"on the way","type":"phrase","zh":"在路上；顺路","en":"during a journey to a place","note":"on the way to + 地点：在去某地的路上。","ex":["I'll buy some milk on the way home.","我回家路上买点牛奶。"],"id":"on-the-way"},"across-from":{"head":"across from","type":"phrase","zh":"在……对面","en":"on the opposite side from","note":"right across from 强调“正对面”。同义：opposite。","ex":["The bank is across from the post office.","银行在邮局对面。"],"id":"across-from"},"you-can-t-miss-it":{"head":"You can't miss it","type":"idiom","zh":"你一眼就能看到","en":"it's very easy to find or see","note":"指路时的常用收尾，表示目标很显眼。","ex":["It's the big red building. You can't miss it.","就是那栋红色大楼，你一眼就能看到。"],"id":"you-can-t-miss-it"},"no-worries":{"head":"No worries","type":"idiom","zh":"不客气；没事","en":"used to reply to thanks, or to say something is not a problem","note":"源自澳式英语，现在英美也很常用，比 You're welcome 更随意。","ex":["\"Sorry I'm late.\" \"No worries.\"","“抱歉我迟到了。”“没事。”"],"id":"no-worries"}}}];
+const MATS = Object.fromEntries(DATA.map(m => [m.id, m]));
+DATA.forEach(m => {
+  m.order = []; const seen = new Set();
+  m.cues.forEach((c, ci) => c.anns.forEach(a => { if (!seen.has(a.id)) { seen.add(a.id); m.order.push({ id: a.id, cue: ci }); } }));
+});
+const TYPE = { word: '单词', phrasal: '短语动词', phrase: '表达', idiom: '习语' };
+const RATES = [1, 0.75, 0.5, 1.25];
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('moerduo:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('moerduo:' + k, JSON.stringify(v)); } catch (e) {} }
+};
+const S = {
+  screen: 'home', from: 'home', mat: null, mode: store.get('mode', 'bi'), rateIx: 0, loop: false, follow: true, cue: -1,
+  revealed: new Set(), sheet: null, resume: false, stopAt: null, filter: 'all', vfilter: 'all',
+  saved: store.get('saved', ['m1:heads-up', 'm1:touch-base', 'm2:tempting', 'm3:grab-a-quick-bite']),
+  progress: store.get('progress', { m1: { max: 6, t: MATS.m1.cues[6].start }, m3: { max: MATS.m3.cues.length - 1, t: 0, done: true } }),
+  cached: store.get('cached', ['m1', 'm3']), last: store.get('last', 'm1'), tipDone: store.get('tipDone', false)
+};
+
+const $ = s => document.querySelector(s);
+const audio = $('#audio'), screen = $('#screen'), cuesEl = $('#cues'), waveEl = $('#wave');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = t => { t = Math.max(0, t || 0); return Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0'); };
+const down = (arr, n) => { const out = [], step = arr.length / n; for (let i = 0; i < n; i++) { let mx = 0; for (let j = Math.floor(i * step); j < Math.floor((i + 1) * step); j++) mx = Math.max(mx, arr[j]); out.push(mx); } return out; };
+const ICON = {
+  play: '<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.6v12.8a1 1 0 0 0 1.52.85l10.2-6.4a1 1 0 0 0 0-1.7L9.52 4.75A1 1 0 0 0 8 5.6z"/></svg>',
+  pause: '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4.2" height="14" rx="1.2"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.2"/></svg>',
+  playS: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5.6v12.8a1 1 0 0 0 1.52.85l10.2-6.4a1 1 0 0 0 0-1.7L8.52 4.75A1 1 0 0 0 7 5.6z"/></svg>',
+  star: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.25 4.1 1 5.8L12 16.9l-5.25 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg>',
+  spk: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6"/><path d="M18.3 6.5a8 8 0 0 1 0 11"/></svg>',
+  left: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  right: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
+  off: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"/></svg>',
+  check: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+};
+
+/* ---------- helpers ---------- */
+function prog(id) {
+  const m = MATS[id], p = S.progress[id];
+  if (!p) return { state: 'new', pct: 0, cue: 0, t: 0 };
+  if (p.done) return { state: 'done', pct: 100, cue: p.max, t: 0 };
+  return { state: 'learning', pct: Math.round((p.max + 1) / m.cues.length * 100), cue: p.max, t: p.t || 0 };
+}
+function saveProgress(done) {
+  const m = S.mat; if (!m) return;
+  const p = S.progress[m.id] || (S.progress[m.id] = { max: -1, t: 0 });
+  p.max = Math.max(p.max, S.cue); p.t = audio.currentTime || m.cues[Math.max(0, S.cue)].start;
+  if (done) p.done = true;
+  store.set('progress', S.progress);
+}
+let toastTimer;
+function toast(msg, action) {
+  const el = $('#toast'); el.innerHTML = '<span>' + esc(msg) + '</span>' + (action ? '<button>' + esc(action.label) + '</button>' : '');
+  if (action) el.querySelector('button').onclick = () => { action.run(); el.classList.remove('show'); };
+  el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), action ? 3200 : 1800);
+}
+function speak(text) {
+  try {
+    const u = new SpeechSynthesisUtterance(text.replace(/\bsth\b/g, 'something').replace(/\bsb\b/g, 'somebody').replace(/\.\.\./g, ''));
+    u.lang = 'en-US'; u.rate = 0.9; speechSynthesis.cancel(); speechSynthesis.speak(u);
+  } catch (e) { toast('当前浏览器不支持发音'); }
+}
+
+/* ---------- navigation ---------- */
+function go(screenName) {
+  if (S.screen === 'player' && screenName !== 'player') { audio.pause(); saveProgress(); }
+  if (screenName !== S.screen) closeSheet(true);
+  S.screen = screenName;
+  $('#v-home').hidden = screenName !== 'home';
+  $('#v-player').hidden = screenName !== 'player';
+  $('#v-vocab').hidden = screenName !== 'vocab';
+  $('#tabbar').hidden = screenName === 'player';
+  $('#back').hidden = screenName !== 'player';
+  $('#navTitle').textContent = screenName === 'player' ? S.mat.title : screenName === 'vocab' ? '生词本' : '磨耳朵';
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === screenName));
+  if (screenName === 'home') renderHome();
+  if (screenName === 'vocab') renderVocab();
+  syncJump();
+}
+function syncJump(which) {
+  const cur = which || (S.sheet ? 'sheet' : S.screen === 'player' && S.mode === 'blind' ? 'blind' : S.screen);
+  document.querySelectorAll('[data-jump]').forEach(b => b.setAttribute('aria-pressed', b.dataset.jump === cur));
+}
+
+/* ---------- home ---------- */
+function renderHome() {
+  let last = MATS[S.last]; if (prog(last.id).state === 'done') last = DATA.find(m => prog(m.id).state !== 'done') || last;
+  const lp = prog(last.id), bars = down(last.peaks, 48), playedBars = Math.round(bars.length * lp.pct / 100);
+  const counts = { all: DATA.length, learning: 0, new: 0, done: 0 }; DATA.forEach(m => counts[prog(m.id).state]++);
+  const list = DATA.filter(m => S.filter === 'all' || prog(m.id).state === S.filter);
+  $('#v-home').innerHTML = `<div class="home">
+    <section class="cont">
+      <div><div class="cont-label">${lp.state === 'new' ? '开始听' : '继续听'}</div>
+        <h2 class="cont-title">${esc(last.title)}</h2>
+        <div class="cont-sub">${esc(last.zh)} · 第 ${lp.cue + 1} / ${last.cues.length} 句</div></div>
+      <div class="miniwave">${bars.map((h, i) => `<i style="--h:${h}" class="${i < playedBars ? 'p' : ''}"></i>`).join('')}</div>
+      <div class="cont-foot"><button class="cont-play" id="contPlay">${ICON.playS}${lp.state === 'new' ? '开始' : '继续'}</button>
+        <span class="cont-left">剩余 ${fmt(last.duration - (lp.t || 0))}</span></div>
+    </section>
+    <section>
+      <div class="sec-head"><h2>全部材料</h2><span>${DATA.length} 篇</span></div>
+      <div class="chips">${[['all', '全部'], ['learning', '在学'], ['new', '未开始'], ['done', '已学完']].map(([k, l]) => `<button class="chip-f" data-filter="${k}" aria-pressed="${S.filter === k}">${l} ${counts[k]}</button>`).join('')}</div>
+      <ul class="mlist">${list.map(m => { const p = prog(m.id), tb = down(m.peaks, 12), pb = Math.round(12 * p.pct / 100);
+        return `<li><button class="mrow" data-open="${m.id}">
+          <span class="tile">${tb.map((h, i) => `<i style="--h:${h}" class="${i < pb ? 'p' : ''}"></i>`).join('')}</span>
+          <span><div class="m-title">${esc(m.title)}</div><div class="m-zh">${esc(m.zh)} · ${esc(m.topic)}</div>
+            <div class="m-meta"><span>${fmt(m.duration)}</span><span>${m.cues.length} 句</span><span>${Object.keys(m.glossary).length} 个标注</span><span>${m.level}</span>${S.cached.includes(m.id) ? `<span class="off">${ICON.off}离线可用</span>` : ''}</div></span>
+          <span class="status ${p.state}">${p.state === 'done' ? ICON.check + '学完' : p.state === 'new' ? '<span class="new">新</span>' : `<span class="ring" style="--p:${p.pct}"></span>${p.pct}%`}</span>
+        </button></li>`; }).join('')}</ul>
+      ${list.length ? '' : '<div class="empty">这个分类下还没有材料</div>'}
+    </section></div>`;
+  $('#contPlay').onclick = () => openMaterial(last.id, { play: true });
+}
+$('#v-home').addEventListener('click', e => {
+  const f = e.target.closest('[data-filter]'); if (f) { S.filter = f.dataset.filter; renderHome(); return; }
+  const o = e.target.closest('[data-open]'); if (o) openMaterial(o.dataset.open, { play: true });
+});
+
+/* ---------- player ---------- */
+let bars = [], lastPlayed = -1, waveDirty = true;
+function cueHTML(c, i, m) {
+  const at = {}; c.anns.forEach(a => at[a.s] = a);
+  let h = '', k = 0;
+  while (k < c.tokens.length) {
+    const a = at[k];
+    if (a) {
+      let inner = '';
+      for (let j = a.s; j <= a.e; j++) inner += `<span class="w" data-k="${j}">${esc(c.tokens[j].w)}</span>` + (j < a.e ? esc(c.tokens[j].p) : '');
+      h += `<span class="ann" data-g="${a.id}">${inner}</span>${esc(c.tokens[a.e].p)}`; k = a.e + 1;
+    } else { h += `<span class="w" data-k="${k}">${esc(c.tokens[k].w)}</span>${esc(c.tokens[k].p)}`; k++; }
+  }
+  return `<article class="cue" data-i="${i}"><div class="cue-meta"><span class="spk spk-${c.spk}">${esc(m.speakers[c.spk])}</span><span class="ts"><span class="eq"><i></i><i></i><i></i></span>${fmt(c.start)}</span></div>
+    <p class="en">${h}</p><p class="zh">${esc(c.zh)}</p><span class="reveal">点按显示本句</span></article>`;
+}
+function buildPlayer() {
+  const m = S.mat;
+  cuesEl.innerHTML = m.cues.map((c, i) => cueHTML(c, i, m)).join('');
+  waveEl.innerHTML = m.peaks.map(h => `<i style="--h:${h}"></i>`).join('');
+  bars = [...waveEl.children]; lastPlayed = -1; waveDirty = true;
+  $('#tDur').textContent = fmt(m.duration);
+  applyMode();
+}
+function applyMode() {
+  cuesEl.classList.toggle('en-only', S.mode === 'en');
+  cuesEl.classList.toggle('blind', S.mode === 'blind');
+  document.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === S.mode));
+  syncJump();
+}
+function openMaterial(id, opt = {}) {
+  const m = MATS[id];
+  if (S.mat !== m) { audio.pause(); S.mat = m; audio.src = m.audio; audio.playbackRate = RATES[S.rateIx]; S.cue = -1; S.revealed = new Set(); buildPlayer(); }
+  S.last = id; store.set('last', id);
+  $('#tip').hidden = S.tipDone;
+  go('player');
+  const p = prog(id);
+  const t = opt.cue != null ? m.cues[opt.cue].start : p.state === 'learning' ? m.cues[p.cue].start : 0;
+  S.follow = true; $('#follow').hidden = true;
+  seek(t, false);
+  requestAnimationFrame(() => scrollToCue(S.cue, false));
+  if (opt.play) play();
+}
+function findCue(t) { const c = S.mat.cues; let i = 0; for (let k = 0; k < c.length; k++) if (c[k].start <= t + 0.05) i = k; return i; }
+function setCue(i) {
+  if (i === S.cue) return;
+  const els = cuesEl.children;
+  if (S.cue >= 0 && els[S.cue]) els[S.cue].classList.remove('active');
+  S.cue = i; els[i].classList.add('active');
+  $('#counter').textContent = `第 ${i + 1} / ${S.mat.cues.length} 句`;
+  waveDirty = true;
+  if (S.follow) scrollToCue(i);
+  if (!audio.paused) saveProgress();
+}
+function scrollToCue(i, smooth = true) {
+  const el = cuesEl.children[i]; if (!el) return;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  cuesEl.scrollTo({ top: Math.max(0, el.offsetTop - cuesEl.clientHeight * 0.22), behavior: smooth && !reduce ? 'smooth' : 'auto' });
+}
+function seek(t, follow = true) {
+  const m = S.mat; t = Math.min(Math.max(0, t), m.duration - 0.05);
+  if (audio.readyState >= 1) audio.currentTime = t; else audio.addEventListener('loadedmetadata', () => { audio.currentTime = t; }, { once: true });
+  if (follow) { S.follow = true; $('#follow').hidden = true; }
+  setCue(findCue(t)); draw(t);
+}
+function seekCue(i) { i = Math.max(0, Math.min(S.mat.cues.length - 1, i)); S.stopAt = null; seek(S.mat.cues[i].start); }
+function draw(t) {
+  const m = S.mat, N = bars.length, played = Math.floor(t / m.duration * N);
+  $('#tNow').textContent = fmt(t);
+  if (played === lastPlayed && !waveDirty) return;
+  const c = m.cues[Math.max(0, S.cue)], a = Math.floor(c.start / m.duration * N), b = Math.floor(c.end / m.duration * N);
+  bars.forEach((el, k) => { el.classList.toggle('p', k < played); el.classList.toggle('c', k >= a && k <= b); });
+  lastPlayed = played; waveDirty = false;
+}
+let raf = 0;
+function loopTick() { update(); if (!audio.paused) raf = requestAnimationFrame(loopTick); }
+function update() {
+  if (!S.mat) return;
+  const t = audio.currentTime;
+  if (S.stopAt != null && t >= S.stopAt) { audio.pause(); S.stopAt = null; }
+  else if (S.loop && S.cue >= 0 && !audio.paused) { const c = S.mat.cues[S.cue]; if (t >= c.end + 0.1) { audio.currentTime = c.start; return; } }
+  setCue(findCue(t)); draw(t);
+}
+function play() { audio.play().catch(() => {}); if (!S.cached.includes(S.mat.id)) { S.cached.push(S.mat.id); store.set('cached', S.cached); } }
+function setPlayIcon() { const p = audio.paused; $('#play').innerHTML = p ? ICON.play : ICON.pause; $('#play').setAttribute('aria-label', p ? '播放' : '暂停'); screen.classList.toggle('paused', p); }
+audio.addEventListener('play', () => { setPlayIcon(); cancelAnimationFrame(raf); raf = requestAnimationFrame(loopTick); });
+audio.addEventListener('pause', () => { setPlayIcon(); saveProgress(); });
+audio.addEventListener('seeked', update);
+audio.addEventListener('ended', () => { saveProgress(true); toast('听完了，这篇已标记为学完'); });
+setPlayIcon();
+
+$('#play').onclick = () => { if (audio.paused) { S.stopAt = null; play(); } else audio.pause(); };
+$('#prev').onclick = () => { const c = S.mat.cues[S.cue]; seekCue(audio.currentTime - c.start > 1.2 ? S.cue : S.cue - 1); };
+$('#next').onclick = () => seekCue(S.cue + 1);
+$('#loop').onclick = () => { S.loop = !S.loop; $('#loop').setAttribute('aria-pressed', S.loop); waveEl.classList.toggle('loop', S.loop); toast(S.loop ? '单句循环已开启' : '单句循环已关闭'); };
+$('#rate').onclick = () => { S.rateIx = (S.rateIx + 1) % RATES.length; audio.playbackRate = RATES[S.rateIx]; $('#rateTxt').textContent = RATES[S.rateIx].toFixed(RATES[S.rateIx] % 0.5 ? 2 : 1) + '×'; };
+document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { S.mode = b.dataset.mode; store.set('mode', S.mode); S.revealed.clear(); cuesEl.querySelectorAll('.revealed').forEach(x => x.classList.remove('revealed')); applyMode(); });
+$('#tipOk').onclick = () => { S.tipDone = true; store.set('tipDone', true); $('#tip').hidden = true; };
+$('#back').onclick = () => go(S.from === 'vocab' ? 'vocab' : 'home');
+$('#follow').onclick = () => { S.follow = true; $('#follow').hidden = true; scrollToCue(S.cue); };
+const unfollow = () => { if (S.follow) { S.follow = false; $('#follow').hidden = false; } };
+cuesEl.addEventListener('wheel', unfollow, { passive: true });
+cuesEl.addEventListener('touchmove', unfollow, { passive: true });
+
+let dragging = false;
+const waveSeek = e => { const r = waveEl.getBoundingClientRect(); seek(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * S.mat.duration); };
+waveEl.addEventListener('pointerdown', e => { dragging = true; waveEl.setPointerCapture(e.pointerId); S.stopAt = null; waveSeek(e); });
+waveEl.addEventListener('pointermove', e => { if (dragging) waveSeek(e); });
+waveEl.addEventListener('pointerup', () => { dragging = false; });
+
+cuesEl.addEventListener('click', e => {
+  const cueEl = e.target.closest('.cue'); if (!cueEl) return;
+  const i = +cueEl.dataset.i;
+  if (S.mode === 'blind' && !cueEl.classList.contains('revealed')) { cueEl.classList.add('revealed'); return; }
+  const ann = e.target.closest('.ann');
+  if (ann) { openSheet({ m: S.mat, gid: ann.dataset.g, cue: i, ctx: 'player' }); return; }
+  const w = e.target.closest('.w');
+  if (w) { openSheet({ m: S.mat, k: +w.dataset.k, cue: i, ctx: 'player' }); return; }
+  seekCue(i); play();
+});
+
+/* ---------- sheet ---------- */
+function sentenceHTML(c, s, e) {
+  return c.tokens.map((t, j) => {
+    const w = esc(t.w), p = esc(t.p);
+    if (j === s && j === e) return `<mark>${w}</mark>${p}`;
+    if (j === s) return `<mark>${w}${p}`;
+    if (j === e) return `${w}</mark>${p}`;
+    return w + p;
+  }).join('');
+}
+function openSheet(o) {
+  if (!S.sheet) { S.resume = S.screen === 'player' && !audio.paused; audio.pause(); }
+  S.sheet = o; renderSheet();
+  $('#scrim').classList.add('show'); $('#sheet').classList.add('show');
+  syncJump();
+}
+function markOn() {
+  cuesEl.querySelectorAll('.on').forEach(x => x.classList.remove('on'));
+  const o = S.sheet; if (!o || o.ctx !== 'player' || o.m !== S.mat) return;
+  const cueEl = cuesEl.children[o.cue];
+  const el = o.gid ? cueEl.querySelector(`.ann[data-g="${o.gid}"]`) : cueEl.querySelector(`.w[data-k="${o.k}"]`);
+  el && el.classList.add('on');
+}
+function renderSheet() {
+  const o = S.sheet, m = o.m, c = m.cues[o.cue], spk = m.speakers[c.spk];
+  const body = $('#shBody'), foot = $('#shFoot');
+  const srcBtn = o.ctx === 'player' ? `<button class="linkbtn" id="replay">${ICON.playS}重听这句</button>` : `<button class="linkbtn" id="gosrc">${ICON.playS}去原文听</button>`;
+  if (o.gid) {
+    const g = m.glossary[o.gid], a = c.anns.find(x => x.id === o.gid), key = m.id + ':' + g.id, saved = S.saved.includes(key);
+    const ix = m.order.findIndex(x => x.id === g.id);
+    body.innerHTML = `<div class="sh-top"><span class="tchip">${TYPE[g.type]}</span>${g.pos ? `<span class="pos">${esc(g.pos)}</span>` : ''}
+        ${o.ctx === 'player' ? `<span class="sh-nav"><button id="shPrev" aria-label="上一个标注" ${ix <= 0 ? 'disabled' : ''}>${ICON.left}</button>${ix + 1} / ${m.order.length}<button id="shNext" aria-label="下一个标注" ${ix >= m.order.length - 1 ? 'disabled' : ''}>${ICON.right}</button></span>` : ''}</div>
+      <div><h2 class="headword">${esc(g.head)}</h2>
+        <div class="pron">${g.ipa ? `<span class="ipa">${esc(g.ipa)}</span>` : ''}<button class="say" id="say">${ICON.spk}发音</button></div></div>
+      <div><p class="def-zh">${esc(g.zh)}</p><p class="def-en">${esc(g.en)}</p></div>
+      <div class="blk"><h3>原句 · 第 ${o.cue + 1} 句 · ${esc(spk)}</h3><p class="src-en">${sentenceHTML(c, a.s, a.e)}</p><p class="src-zh">${esc(c.zh)}</p>${srcBtn}</div>
+      <div class="blk"><h3>用法</h3><p class="note">${esc(g.note)}</p></div>
+      <div class="blk"><h3>例句</h3><p class="ex-en">${esc(g.ex[0])}</p><p class="ex-zh">${esc(g.ex[1])}</p></div>`;
+    foot.hidden = false;
+    foot.innerHTML = `<button class="save ${saved ? 'saved' : ''}" id="save">${ICON.star}${saved ? '已在生词本' : '加入生词本'}</button>`;
+    $('#say').onclick = () => speak(g.head);
+    $('#save').onclick = () => toggleSave(key);
+    if (o.ctx === 'player') {
+      const nav = d => { const t = m.order[ix + d]; if (t) { S.sheet = { ...o, gid: t.id, cue: t.cue }; renderSheet(); } };
+      $('#shPrev').onclick = () => nav(-1); $('#shNext').onclick = () => nav(1);
+    }
+  } else {
+    const w = c.tokens[o.k].w;
+    body.innerHTML = `<div class="sh-top"><span class="tchip">未收录</span></div>
+      <div><h2 class="headword">${esc(w)}</h2><div class="pron"><button class="say" id="say">${ICON.spk}发音</button></div></div>
+      <p class="miss">这个词在本篇里没有标注。正式版可以接一份离线词典，未标注的词也能查到基础释义（待你确认）。</p>
+      <div class="blk"><h3>原句 · 第 ${o.cue + 1} 句 · ${esc(spk)}</h3><p class="src-en">${sentenceHTML(c, o.k, o.k)}</p><p class="src-zh">${esc(c.zh)}</p>${srcBtn}</div>`;
+    foot.hidden = true;
+    $('#say').onclick = () => speak(w);
+  }
+  body.scrollTop = 0;
+  const r = $('#replay'); if (r) r.onclick = () => { S.resume = false; seek(c.start, false); S.stopAt = c.end; play(); };
+  const gsrc = $('#gosrc'); if (gsrc) gsrc.onclick = () => { S.from = 'vocab'; closeSheet(true); openMaterial(m.id, { cue: o.cue, play: true }); };
+  markOn();
+}
+function closeSheet(silent) {
+  if (!S.sheet) return;
+  $('#scrim').classList.remove('show'); $('#sheet').classList.remove('show');
+  S.sheet = null; markOn();
+  if (S.resume && !silent) { S.stopAt = null; play(); }
+  S.resume = false; syncJump();
+}
+$('#scrim').onclick = () => closeSheet();
+function toggleSave(key) {
+  const i = S.saved.indexOf(key);
+  if (i >= 0) S.saved.splice(i, 1); else S.saved.unshift(key);
+  store.set('saved', S.saved);
+  if (S.sheet) renderSheet();
+  if (S.screen === 'vocab') renderVocab();
+  toast(i >= 0 ? '已移出生词本' : '已加入生词本');
+}
+
+/* ---------- vocab ---------- */
+function renderVocab() {
+  const items = S.saved.map(key => { const [mid, gid] = key.split(':'), m = MATS[mid], g = m && m.glossary[gid]; return g ? { key, m, g, cue: m.order.find(x => x.id === gid).cue } : null; }).filter(Boolean);
+  const isWord = x => x.g.type === 'word';
+  const counts = { all: items.length, word: items.filter(isWord).length, phrase: items.filter(x => !isWord(x)).length };
+  const list = items.filter(x => S.vfilter === 'all' || (S.vfilter === 'word') === isWord(x));
+  $('#v-vocab').innerHTML = `<div class="vocab">
+    <div class="sec-head"><h2>收藏的词和短语</h2><span>${items.length} 个</span></div>
+    <div class="chips">${[['all', '全部'], ['word', '单词'], ['phrase', '短语·习语']].map(([k, l]) => `<button class="chip-f" data-vf="${k}" aria-pressed="${S.vfilter === k}">${l} ${counts[k]}</button>`).join('')}</div>
+    ${list.length ? `<ul class="vlist">${list.map(x => `<li class="vrow"><button class="vmain" data-key="${x.key}">
+        <span class="v-head"><b>${esc(x.g.head)}</b><span class="tchip">${TYPE[x.g.type]}</span></span>
+        <span class="v-zh">${esc(x.g.zh)}</span><span class="v-src">${esc(x.m.title)} · 第 ${x.cue + 1} 句</span></button>
+        <button class="unstar" data-un="${x.key}" aria-label="移出生词本">${ICON.star}</button></li>`).join('')}</ul>`
+      : `<div class="empty"><b>还没有收藏</b>在播放页点荧光标记的词，再点「加入生词本」</div>`}
+  </div>`;
+}
+$('#v-vocab').addEventListener('click', e => {
+  const f = e.target.closest('[data-vf]'); if (f) { S.vfilter = f.dataset.vf; renderVocab(); return; }
+  const un = e.target.closest('[data-un]');
+  if (un) { const key = un.dataset.un, pos = S.saved.indexOf(key); S.saved.splice(pos, 1); store.set('saved', S.saved); renderVocab();
+    toast('已移出生词本', { label: '撤销', run: () => { S.saved.splice(pos, 0, key); store.set('saved', S.saved); renderVocab(); } }); return; }
+  const v = e.target.closest('[data-key]');
+  if (v) { const [mid, gid] = v.dataset.key.split(':'), m = MATS[mid]; openSheet({ m, gid, cue: m.order.find(x => x.id === gid).cue, ctx: 'vocab' }); }
+});
+
+/* ---------- tabs, jump bar, keys ---------- */
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => { S.from = t.dataset.tab; go(t.dataset.tab); });
+document.querySelectorAll('[data-jump]').forEach(b => b.onclick = () => {
+  const j = b.dataset.jump;
+  closeSheet(true);
+  if (j === 'home' || j === 'vocab') { S.from = j; go(j); return; }
+  S.from = 'home';
+  if (j === 'player') { if (S.mode === 'blind') { S.mode = 'bi'; applyMode(); } openMaterial('m1'); }
+  if (j === 'sheet') { openMaterial('m1', { cue: 4 }); openSheet({ m: S.mat, gid: 'cut-it-close', cue: 4, ctx: 'player' }); }
+  if (j === 'blind') { S.mode = 'blind'; applyMode(); openMaterial('m1'); }
+});
+document.addEventListener('keydown', e => {
+  if (S.screen !== 'player' || e.target.closest('input,textarea')) return;
+  if (e.key === 'Escape' && S.sheet) { closeSheet(); return; }
+  if (S.sheet) return;
+  if (e.code === 'Space') { e.preventDefault(); $('#play').click(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); $('#prev').click(); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); $('#next').click(); }
+});
+
+go('home');
+</script>

@@ -1,0 +1,44 @@
+<view class="home">
+  <view class="cont" wx:if="{{cont}}" data-id="{{cont.id}}" bindtap="onOpen">
+    <view class="cont-label">{{cont.isNew ? '开始听' : '继续听'}}</view>
+    <view class="cont-title">{{cont.title}}</view>
+    <view class="cont-sub">{{cont.titleZh}} · 第 {{cont.cueNo}} / {{cont.cueCount}} 句</view>
+    <view class="miniwave">
+      <view wx:for="{{cont.bars}}" class="mb {{item.on ? 'on' : ''}}" style="height: {{item.h}}%"></view>
+    </view>
+    <view class="cont-foot">
+      <view class="cont-play"><text class="i i-play"></text>{{cont.isNew ? '开始' : '继续'}}</view>
+      <text class="cont-left">剩余 {{cont.left}}</text>
+    </view>
+  </view>
+
+  <view class="sec">
+    <view class="sec-head"><text class="h">全部材料</text><text class="n">{{total}} 篇</text></view>
+    <view class="chips">
+      <view wx:for="{{filters}}" class="chip {{filter === item.k ? 'on' : ''}}" data-k="{{item.k}}" bindtap="onFilter">{{item.t}} {{item.n}}</view>
+    </view>
+
+    <view wx:for="{{list}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="onOpen">
+      <view class="tile">
+        <view wx:for="{{item.tile}}" wx:for-item="b" class="tb {{b.on ? 'on' : ''}}" style="height: {{b.h * 0.7}}%"></view>
+      </view>
+      <view class="info">
+        <view class="title">{{item.title}}</view>
+        <view class="zh">{{item.titleZh}}<text wx:if="{{item.tag}}"> · {{item.tag}}</text></view>
+        <view class="meta">
+          <text>{{item.dur}}</text><text>{{item.cueCount}} 句</text><text>{{item.noteCount}} 个释义</text><text wx:if="{{item.level}}">{{item.level}}</text><text wx:if="{{item.added}}">{{item.added}}添加</text>
+          <text wx:if="{{item.offline}}" class="off"><text class="i i-offline"></text>离线可用</text>
+        </view>
+      </view>
+      <view class="status {{item.st.state}}">
+        <block wx:if="{{item.st.state === 'done'}}"><text class="i i-check ok"></text><text>学完</text></block>
+        <text wx:elif="{{item.st.state === 'new'}}" class="new">新</text>
+        <block wx:else><view class="ring" style="background: conic-gradient(var(--fg) {{item.st.pct}}%, var(--wave) 0)"><view class="ring-in"></view></view><text>{{item.st.pct}}%</text></block>
+      </view>
+    </view>
+
+    <view class="empty" wx:if="{{!total}}"><text class="t">还没有素材</text>用 add-material 新建一份，再运行 material.py build</view>
+    <view class="empty" wx:elif="{{!list.length}}">这个分类下还没有材料</view>
+  </view>
+  <view class="tab-space"></view>
+</view>
