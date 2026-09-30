@@ -24,6 +24,14 @@
     <view class="tail"></view>
   </scroll-view>
 
+  <view class="rate-mask" wx:if="{{ratePanel}}" catchtap="onRateClose" catchtouchmove="noop"></view>
+  <view class="rate-panel" wx:if="{{ratePanel}}">
+    <view class="rp-title">播放速度</view>
+    <view class="rp-opts">
+      <view wx:for="{{rates}}" wx:key="v" class="rp-opt {{item.v === rate ? 'on' : ''}}" data-v="{{item.v}}" bindtap="onRatePick">{{item.t}}</view>
+    </view>
+  </view>
+
   <view class="follow" wx:if="{{!follow}}" bindtap="onFollow"><text class="i i-down"></text>回到当前句</view>
 
   <view class="dock">
@@ -38,9 +46,9 @@
     </view>
     <view class="times"><text>{{tNow}}</text><text>{{tDur}}</text></view>
     <view class="ctrls">
-      <view class="cb" bindtap="onRate"><view class="ic"><text class="rate">{{rateText}}</text></view>倍速</view>
+      <view class="cb {{ratePanel ? 'on' : ''}}" bindtap="onRate"><view class="ic"><text class="rate">{{rateText}}</text></view>倍速</view>
       <view class="cb" bindtap="onPrev"><view class="ic"><text class="i i-prev"></text></view>上一句</view>
-      <view class="play" bindtap="onPlayTap"><text class="i {{playing ? 'i-pause' : 'i-play'}}"></text></view>
+      <view class="play {{loading ? 'loading' : ''}}" bindtap="onPlayTap"><text class="i {{playing || loading ? 'i-pause' : 'i-play'}}"></text></view>
       <view class="cb" bindtap="onNext"><view class="ic"><text class="i i-next"></text></view>下一句</view>
       <view class="cb {{loop ? 'on' : ''}}" bindtap="onLoop"><view class="ic"><text class="i i-loop"></text></view>单句循环</view>
     </view>

@@ -29,3 +29,18 @@
 .new { font-size: 23rpx; padding: 4rpx 16rpx; border-radius: 999rpx; border: 1rpx solid var(--line); }
 .ring { width: 56rpx; height: 56rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 4rpx; }
 .ring-in { width: 44rpx; height: 44rpx; border-radius: 50%; background: var(--bg); }
+
+.cont-label { display: flex; align-items: center; }
+.cont .eq { display: flex; align-items: flex-end; height: 22rpx; margin-right: 10rpx; }
+.cont .eb { width: 4rpx; height: 40%; margin-right: 3rpx; border-radius: 2rpx; background: var(--hl-strong); animation: eq 0.9s ease-in-out infinite; }
+.eb:nth-child(2) { animation-delay: -0.3s; }
+.eb:nth-child(3) { animation-delay: -0.6s; }
+.eq.paused .eb { animation-play-state: paused; }
+@keyframes eq { 0%, 100% { height: 30%; } 50% { height: 100%; } }
+/* 正在播放的那一篇：缩略图上的柱子跳动 */
+.tile.playing .tb { background: var(--fg); animation: bounce 0.8s ease-in-out infinite alternate; }
+.tile.playing .tb:nth-child(3n + 1) { animation-delay: -0.2s; }
+.tile.playing .tb:nth-child(3n + 2) { animation-delay: -0.5s; }
+@keyframes bounce { from { transform: scaleY(0.4); } to { transform: scaleY(1); } }
+.now { color: var(--fg); font-weight: 600; }
+.mini-space { height: 124rpx; }

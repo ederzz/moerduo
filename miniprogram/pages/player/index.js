@@ -1,15 +1,12 @@
+// 播放页：只负责显示和操作，音频本身在 utils/player.js 里，离开这个页面也会继续播放
 const data = require('../../data/index')
-const progress = require('../../utils/progress')
+const player = require('../../utils/player')
 const settings = require('../../utils/settings')
 const vocab = require('../../utils/vocab')
 const notes = require('../../utils/notes')
-const audioSource = require('../../utils/audio-source')
 const fmt = require('../../utils/format')
 
-const RATES = [1, 0.75, 0.5, 1.25]
 const MODES = [{ k: 'bi', t: '双语' }, { k: 'en', t: '英文' }, { k: 'blind', t: '盲听' }]
-const SAVE_EVERY = 3000 // 播放中最多每 3 秒写一次进度
-const LOAD_TIMEOUT = 8000 // 有些机型地址 404 时不触发 onError，超时就换下一个地址
 
 function rateText(r) {
   return (r % 0.5 ? r.toFixed(2) : r.toFixed(1)) + '×'
@@ -49,7 +46,11 @@ Page({
     anim: false,
     follow: true,
     playing: false,
+    loading: false,
     rateText: '1.0×',
+    rate: 1,
+    rates: player.RATES.map(v => ({ v, t: rateText(v) })),
+    ratePanel: false,
     loop: false,
     peaks: [],
     playedW: 0,
@@ -60,6 +61,7 @@ Page({
     sheet: { show: false, items: [], active: 0, unknown: null, navText: '', canPrev: false, canNext: false }
   },
 
+  // 打开方式：?id=素材&cue=第几句（从 0 开始，可选）&autoplay=0（不自动播放，可选）
   onLoad(q) {
     const mat = data.get(q.id)
     if (!mat) {
@@ -71,212 +73,59 @@ Page({
     this.cue = -1
     this.selCue = null
     this.revealed = {}
-    this.lastSave = 0
-    this.lastT = 0
-    this.stopAt = null
-    this.seekGuard = 0
-
     const s = settings.get()
-    this.rateIx = Math.max(0, RATES.indexOf(s.rate))
     wx.setNavigationBarTitle({ title: mat.title })
-
-    const st = progress.status(mat.id, mat.cues.length)
-    const startCue = q.cue != null ? Math.min(+q.cue, mat.cues.length - 1) : st.state === 'learning' ? st.cue : 0
     this.setData({
       mode: s.subtitleMode,
       tip: !s.tipDismissed,
-      rateText: rateText(RATES[this.rateIx]),
       cues: mat.cues.map(cueView),
       peaks: mat.peaks.map(p => Math.round(p * 100)),
       tDur: fmt.time(mat.duration)
     }, () => {
-      this.setCue(startCue, true)
-      this.draw(mat.cues[startCue].start)
+      this.unsub = player.subscribe((type, st) => this.onPlayer(type, st))
+      const opts = { autoplay: q.autoplay !== '0' }
+      if (q.cue != null) opts.cue = +q.cue
+      player.open(mat.id, opts)
+      this.sync()
       this.measure(() => {
         this.scrollToCue(this.cue)
         setTimeout(() => this.setData({ anim: true }), 300)
       })
     })
-    this.initAudio(mat.cues[startCue].start, q.autoplay !== '0')
-  },
-
-  onHide() {
-    this.saveProgress()
   },
 
   onUnload() {
-    this.saveProgress()
-    this.stopTick()
-    this.clearLoadTimer()
-    if (this.ctx) this.ctx.destroy()
-    wx.setKeepScreenOn({ keepScreenOn: false })
+    // 不停止播放：回到首页后迷你播放条接着显示
+    if (this.unsub) this.unsub()
   },
 
-  /* ---------- 音频 ---------- */
+  /* ---------- 同步全局播放器的状态 ---------- */
 
-  initAudio(startAt, autoplay) {
-    const ctx = wx.createInnerAudioContext()
-    this.ctx = ctx
-    this.srcs = audioSource.sources(this.mat.id)
-    this.started = false
-    this.startAt = startAt
-    ctx.playbackRate = RATES[this.rateIx]
-
-    ctx.onPlay(() => {
-      this.clearLoadTimer()
-      if (!this.started) {
-        this.started = true
-        // startTime 在部分机型上不生效，第一次开始播放时再跳一次
-        if (this.startAt > 0.5 && Math.abs(ctx.currentTime - this.startAt) > 1) {
-          this.seekGuard = Date.now() + 600
-          ctx.seek(this.startAt)
-        }
-      }
-      this.setData({ playing: true })
-      this.startTick()
-      wx.setKeepScreenOn({ keepScreenOn: true })
-    })
-    ctx.onPause(() => this.onStopped())
-    ctx.onStop(() => this.onStopped())
-    ctx.onEnded(() => {
-      this.onStopped()
-      progress.complete(this.mat.id, this.mat.cues.length)
-      wx.showToast({ title: '听完了，已标记为学完', icon: 'none' })
-    })
-    ctx.onCanplay(() => {
-      this.clearLoadTimer()
-      const s = this.srcs[this.srcIx]
-      if (s && s.cacheable) audioSource.saveToCache(this.mat.id, s.url)
-    })
-    ctx.onError(err => {
-      this.clearLoadTimer()
-      console.warn('音频加载失败', this.srcs[this.srcIx], err)
-      this.useSource(this.srcIx + 1, this.wantPlay)
-    })
-    ctx.onSeeked(() => { this.seekGuard = 0 })
-    ctx.onTimeUpdate(() => this.tick())
-
-    this.useSource(0, autoplay)
+  sync() {
+    const st = player.state()
+    if (st.id !== this.mat.id) return
+    this.setCue(st.cue, true)
+    this.draw(st.t)
+    this.syncState(st)
   },
 
-  useSource(i, play) {
-    if (i >= this.srcs.length) {
-      this.failed = true
-      this.setData({ playing: false })
-      wx.showModal({
-        title: '音频加载失败',
-        content: this.srcs.length ? '检查网络后点播放重试。' : '还没有配置音频地址：在 miniprogram/config.js 里填写 GitHub 仓库链接。',
-        showCancel: false
-      })
+  syncState(st) {
+    this.setData({ playing: st.playing, loading: st.loading, loop: st.loop, rate: st.rate, rateText: rateText(st.rate) })
+  },
+
+  onPlayer(type, st) {
+    if (st.id !== this.mat.id) {
+      if (this.data.playing) this.setData({ playing: false })
       return
     }
-    this.failed = false
-    this.srcIx = i
-    this.wantPlay = play
-    const t = this.started ? this.lastT : this.startAt
-    this.started = false
-    this.startAt = t
-    this.seekGuard = Date.now() + 600
-    this.ctx.startTime = t
-    this.ctx.src = this.srcs[i].url
-    if (play) {
-      this.ctx.play()
-      this.watchLoad()
-    }
-  },
-
-  watchLoad() {
-    this.clearLoadTimer()
-    this.loadTimer = setTimeout(() => {
-      if (this.started) return
-      console.warn('音频加载超时', this.srcs[this.srcIx])
-      this.ctx.stop()
-      this.useSource(this.srcIx + 1, true)
-    }, LOAD_TIMEOUT)
-  },
-
-  clearLoadTimer() {
-    if (this.loadTimer) clearTimeout(this.loadTimer)
-    this.loadTimer = null
-  },
-
-  play() {
-    if (this.failed) {
-      this.useSource(0, true)
-      return
-    }
-    this.ctx.play()
-    if (!this.started) this.watchLoad()
-  },
-
-  onStopped() {
-    this.setData({ playing: false })
-    this.stopTick()
-    this.saveProgress()
-    wx.setKeepScreenOn({ keepScreenOn: false })
-  },
-
-  startTick() {
-    this.stopTick()
-    this.timer = setInterval(() => this.tick(), 150)
-  },
-
-  stopTick() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
-  },
-
-  tick() {
-    if (!this.started || Date.now() < this.seekGuard) return
-    const t = this.ctx.currentTime
-    this.lastT = t
-    if (this.stopAt != null && t >= this.stopAt) {
-      this.stopAt = null
-      this.ctx.pause()
-      return
-    }
-    if (this.data.loop && this.cue >= 0) {
-      const c = this.mat.cues[this.cue]
-      if (t >= c.end + 0.08) {
-        this.seek(c.start)
-        return
-      }
-    }
-    this.setCue(this.findCue(t))
-    this.draw(t)
-    if (Date.now() - this.lastSave > SAVE_EVERY) this.saveProgress()
-  },
-
-  seek(t) {
-    t = Math.min(Math.max(0, t), this.mat.duration - 0.05)
-    if (this.started) {
-      this.seekGuard = Date.now() + 500
-      this.ctx.seek(t)
-    } else {
-      this.startAt = t
-      this.ctx.startTime = t
-    }
-    this.lastT = t
-    this.setCue(this.findCue(t))
-    this.draw(t)
-  },
-
-  seekCue(i) {
-    i = Math.max(0, Math.min(this.mat.cues.length - 1, i))
-    this.stopAt = null
-    if (!this.data.follow) this.setData({ follow: true })
-    this.seek(this.mat.cues[i].start)
-  },
-
-  findCue(t) {
-    const cues = this.mat.cues
-    let i = 0
-    for (let k = 0; k < cues.length; k++) if (cues[k].start <= t + 0.05) i = k
-    return i
+    if (type === 'cue') this.setCue(st.cue)
+    else if (type === 'time') this.draw(st.t)
+    else if (type === 'state' || type === 'load') this.syncState(st)
+    else if (type === 'ended') wx.showToast({ title: '听完了，已标记为学完', icon: 'none' })
   },
 
   setCue(i, force) {
-    if (i === this.cue && !force) return
+    if (i < 0 || (i === this.cue && !force)) return
     const up = {}
     if (this.cue >= 0 && this.cue !== i) up[`cues[${this.cue}].on`] = false
     up[`cues[${i}].on`] = true
@@ -296,10 +145,8 @@ Page({
     if (w !== this.data.playedW || now !== this.data.tNow) this.setData({ playedW: w, tNow: now })
   },
 
-  saveProgress() {
-    if (!this.mat || this.cue < 0) return
-    progress.record(this.mat.id, this.cue, this.mat.cues.length)
-    this.lastSave = Date.now()
+  refollow() {
+    if (!this.data.follow) this.setData({ follow: true })
   },
 
   /* ---------- 字幕列表滚动 ---------- */
@@ -351,8 +198,9 @@ Page({
   onCueTap(e) {
     const i = e.currentTarget.dataset.i
     if (this.data.mode === 'blind' && !this.data.cues[i].rev) return this.reveal(i)
-    this.seekCue(i)
-    this.play()
+    this.refollow()
+    player.seekCue(i)
+    player.play()
   },
 
   onWordTap(e) {
@@ -367,8 +215,8 @@ Page({
 
   pauseForSheet() {
     if (this.data.sheet.show) return
-    this.resume = this.data.playing
-    if (this.data.playing) this.ctx.pause()
+    this.resume = player.state().playing
+    if (this.resume) player.pause()
   },
 
   navState(item) {
@@ -405,11 +253,14 @@ Page({
   onSheetClose() {
     this.setData({ 'sheet.show': false })
     this.markSel(null)
-    if (this.resume) {
-      this.stopAt = null
-      this.play()
-    }
+    if (this.resume) player.play()
     this.resume = false
+  },
+
+  prefixed(obj) {
+    const out = {}
+    Object.keys(obj).forEach(k => { out['sheet.' + k] = obj[k] })
+    return out
   },
 
   onSheetTab(e) {
@@ -417,12 +268,6 @@ Page({
     const item = this.data.sheet.items[active]
     this.setData(Object.assign({ 'sheet.active': active }, this.prefixed(this.navState(item))))
     this.markNote(item)
-  },
-
-  prefixed(obj) {
-    const out = {}
-    Object.keys(obj).forEach(k => { out['sheet.' + k] = obj[k] })
-    return out
   },
 
   stepNote(d) {
@@ -444,11 +289,8 @@ Page({
   },
 
   onSheetReplay(e) {
-    const c = this.mat.cues[e.detail.cue]
     this.resume = false
-    this.seek(c.start)
-    this.stopAt = c.end
-    this.play()
+    player.playCueOnce(e.detail.cue)
   },
 
   onSheetSave(e) {
@@ -462,36 +304,39 @@ Page({
   /* ---------- 控制栏 ---------- */
 
   onPlayTap() {
-    if (this.data.playing) {
-      this.ctx.pause()
-    } else {
-      this.stopAt = null
-      this.play()
-    }
+    player.toggle()
   },
 
   onPrev() {
-    const c = this.mat.cues[this.cue]
-    this.seekCue(this.lastT - c.start > 1.2 ? this.cue : this.cue - 1)
+    this.refollow()
+    player.prev()
   },
 
   onNext() {
-    this.seekCue(this.cue + 1)
+    this.refollow()
+    player.next()
   },
 
   onLoop() {
-    const loop = !this.data.loop
-    this.setData({ loop })
+    const loop = !player.state().loop
+    player.setLoop(loop)
     wx.showToast({ title: loop ? '单句循环已开启' : '单句循环已关闭', icon: 'none' })
   },
 
   onRate() {
-    this.rateIx = (this.rateIx + 1) % RATES.length
-    const r = RATES[this.rateIx]
-    this.ctx.playbackRate = r
-    settings.set({ rate: r })
-    this.setData({ rateText: rateText(r) })
+    this.setData({ ratePanel: !this.data.ratePanel })
   },
+
+  onRateClose() {
+    this.setData({ ratePanel: false })
+  },
+
+  onRatePick(e) {
+    this.setData({ ratePanel: false })
+    player.setRate(e.currentTarget.dataset.v)
+  },
+
+  noop() {},
 
   onMode(e) {
     const mode = e.currentTarget.dataset.m
@@ -515,8 +360,7 @@ Page({
     this.lastWave = now
     const x = e.touches[0].clientX
     const ratio = Math.min(1, Math.max(0, (x - this.waveRect.left) / this.waveRect.width))
-    this.stopAt = null
-    if (!this.data.follow) this.setData({ follow: true })
-    this.seek(ratio * this.mat.duration)
+    this.refollow()
+    player.seek(ratio * this.mat.duration)
   }
 })

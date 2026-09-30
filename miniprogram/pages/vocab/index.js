@@ -9,7 +9,7 @@ const FILTERS = [
 ]
 
 Page({
-  data: { filters: [], filter: 'all', list: [], total: 0, sheet: { show: false, items: [] }, toast: '' },
+  data: { filters: [], filter: 'all', list: [], total: 0, sheet: { show: false, items: [] }, toast: '', mini: false },
 
   onShow() {
     this.tabBar(true)
@@ -36,7 +36,7 @@ Page({
         note: v.note,
         head: n.head,
         typeLabel: notes.TYPE[n.type],
-        isWord: n.type === 'word',
+        isWord: n.type === 'word' || n.type === 'proper',
         context: n.context,
         src: `${m.title} · 第 ${notes.firstCue(m, v.note) + 1} 句`
       }
@@ -96,6 +96,10 @@ Page({
     this.removed = null
     this.hideToast()
     this.render()
+  },
+
+  onMini(e) {
+    this.setData({ mini: e.detail.show })
   },
 
   hideToast() {

@@ -1,4 +1,4 @@
 {
   "navigationBarTitleText": "生词本",
-  "usingComponents": { "note-sheet": "/components/note-sheet/index" }
+  "usingComponents": { "note-sheet": "/components/note-sheet/index", "mini-player": "/components/mini-player/index" }
 }

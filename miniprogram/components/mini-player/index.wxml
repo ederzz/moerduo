@@ -1,0 +1,10 @@
+<view class="mini" wx:if="{{show}}" bindtap="onOpen">
+  <view class="eq {{playing ? '' : 'paused'}}"><view class="eb"></view><view class="eb"></view><view class="eb"></view></view>
+  <view class="text">
+    <view class="title">{{title}}</view>
+    <view class="line">{{loading ? '正在加载音频…' : line}}</view>
+  </view>
+  <view class="btn play" catchtap="onToggle"><text class="i {{playing ? 'i-pause' : 'i-play'}}"></text></view>
+  <view class="btn close" catchtap="onClose"><text class="x">×</text></view>
+  <view class="bar"><view class="fill" style="width: {{pct}}%"></view></view>
+</view>

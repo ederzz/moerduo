@@ -38,7 +38,7 @@ DATA = ROOT / "miniprogram" / "data" / "materials"
 PEAKS = 120
 TRASH = Path.home() / ".Trash"
 
-TYPES = {"单词": "word", "短语": "phrase", "短语动词": "phrasal", "习语": "idiom"}
+TYPES = {"单词": "word", "短语": "phrase", "短语动词": "phrasal", "习语": "idiom", "专有名词": "proper"}
 FIELDS = {"类型", "匹配", "句子", "词性", "音标", "本句"}
 SECTIONS = ["近义词", "近义词比较", "使用场景", "口语化表达", "例句"]
 AUDIO_EXT = {".mp3", ".m4a", ".aac", ".wav", ".flac", ".ogg", ".opus", ".wma"}
@@ -329,7 +329,10 @@ def load(slug):
                 r.error(f"{where}：「类型」必须是 {'、'.join(TYPES)} 之一")
             if not f.get("本句"):
                 r.error(f"{where}：缺少「本句」")
-            missing = [t for t in SECTIONS if t not in {x["title"] for x in e["sections"]}]
+            # 专有名词（人名、地名）不要求标准分节，写「简介」即可
+            missing = [] if f.get("类型") == "专有名词" else [t for t in SECTIONS if t not in {x["title"] for x in e["sections"]}]
+            if f.get("类型") == "专有名词" and not e["sections"]:
+                r.warn(f"{where}：专有名词至少写一节「简介」")
             if missing:
                 r.warn(f"{where}：缺少标准分节 {'、'.join(missing)}")
             e["id"] = slugify(e["head"])

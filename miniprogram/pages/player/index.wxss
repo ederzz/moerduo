@@ -56,3 +56,12 @@ page { height: 100%; overflow: hidden; }
 .cb.on .ic { background: var(--hl-strong); }
 .rate { font-family: var(--f-num); font-size: 27rpx; font-weight: 600; }
 .play { width: 120rpx; height: 120rpx; border-radius: 50%; background: var(--ink); color: var(--on-ink); display: flex; align-items: center; justify-content: center; font-size: 52rpx; margin-top: -12rpx; }
+
+.rate-mask { position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 8; }
+.rate-panel { position: absolute; left: 24rpx; right: 24rpx; bottom: calc(300rpx + env(safe-area-inset-bottom)); z-index: 9; background: var(--surface); border: 1rpx solid var(--line); border-radius: 28rpx; padding: 20rpx 20rpx 24rpx; box-shadow: 0 16rpx 48rpx -16rpx rgba(17, 19, 24, 0.35); }
+.rp-title { font-size: 23rpx; font-weight: 600; letter-spacing: 1rpx; color: var(--dim); margin: 0 4rpx 16rpx; }
+.rp-opts { display: flex; }
+.rp-opt { flex: 1; height: 72rpx; margin: 0 4rpx; border-radius: 18rpx; background: var(--surface-2); color: var(--fg); display: flex; align-items: center; justify-content: center; font-family: var(--f-num); font-size: 25rpx; font-weight: 600; }
+.rp-opt.on { background: var(--ink); color: var(--on-ink); }
+.play.loading { animation: pulse 1s ease-in-out infinite alternate; }
+@keyframes pulse { from { opacity: 1; } to { opacity: 0.45; } }

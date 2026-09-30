@@ -1,13 +1,13 @@
 <view class="home">
-  <view class="cont" wx:if="{{cont}}" data-id="{{cont.id}}" bindtap="onOpen">
-    <view class="cont-label">{{cont.isNew ? '开始听' : '继续听'}}</view>
+  <view class="cont" wx:if="{{cont}}" bindtap="onContOpen">
+    <view class="cont-label"><view class="eq {{cont.playing ? '' : 'paused'}}" wx:if="{{cont.live}}"><view class="eb"></view><view class="eb"></view><view class="eb"></view></view>{{cont.label}}</view>
     <view class="cont-title">{{cont.title}}</view>
     <view class="cont-sub">{{cont.titleZh}} · 第 {{cont.cueNo}} / {{cont.cueCount}} 句</view>
     <view class="miniwave">
       <view wx:for="{{cont.bars}}" class="mb {{item.on ? 'on' : ''}}" style="height: {{item.h}}%"></view>
     </view>
     <view class="cont-foot">
-      <view class="cont-play"><text class="i i-play"></text>{{cont.isNew ? '开始' : '继续'}}</view>
+      <view class="cont-play" catchtap="onContPlay"><text class="i {{cont.playing ? 'i-pause' : 'i-play'}}"></text>{{cont.playing ? '暂停' : cont.label === '开始听' ? '开始' : '继续'}}</view>
       <text class="cont-left">剩余 {{cont.left}}</text>
     </view>
   </view>
@@ -19,7 +19,7 @@
     </view>
 
     <view wx:for="{{list}}" wx:key="id" class="row" data-id="{{item.id}}" bindtap="onOpen">
-      <view class="tile">
+      <view class="tile {{item.playing ? 'playing' : ''}}">
         <view wx:for="{{item.tile}}" wx:for-item="b" class="tb {{b.on ? 'on' : ''}}" style="height: {{b.h * 0.7}}%"></view>
       </view>
       <view class="info">
@@ -27,6 +27,7 @@
         <view class="zh">{{item.titleZh}}<text wx:if="{{item.tag}}"> · {{item.tag}}</text></view>
         <view class="meta">
           <text>{{item.dur}}</text><text>{{item.cueCount}} 句</text><text>{{item.noteCount}} 个释义</text><text wx:if="{{item.level}}">{{item.level}}</text><text wx:if="{{item.added}}">{{item.added}}添加</text>
+          <text wx:if="{{item.active}}" class="now">{{item.playing ? '正在播放' : '已暂停'}}</text>
           <text wx:if="{{item.offline}}" class="off"><text class="i i-offline"></text>离线可用</text>
         </view>
       </view>
@@ -41,4 +42,7 @@
     <view class="empty" wx:elif="{{!list.length}}">这个分类下还没有材料</view>
   </view>
   <view class="tab-space"></view>
+  <view class="mini-space" wx:if="{{mini}}"></view>
 </view>
+
+<mini-player bind:visible="onMini" />

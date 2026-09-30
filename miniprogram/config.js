@@ -5,7 +5,7 @@ module.exports = {
     repo: 'https://github.com/ederzz/moerduo',
     // 用 git tag，不要用分支名（jsDelivr 对分支有缓存延迟）。
     // 新增或更新音频后：打新 tag 推送，再改这里，重新上传体验版
-    ref: 'v1'
+    ref: 'v2'
   },
   // 第一个加载失败时依次尝试下一个
   cdnHosts: ['cdn.jsdelivr.net', 'fastly.jsdelivr.net', 'gcore.jsdelivr.net'],

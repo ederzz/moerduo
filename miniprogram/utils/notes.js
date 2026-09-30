@@ -1,7 +1,7 @@
 // 释义弹层用的数据
 const vocab = require('./vocab')
 
-const TYPE = { word: '单词', phrasal: '短语动词', phrase: '短语', idiom: '习语' }
+const TYPE = { word: '单词', phrasal: '短语动词', phrase: '短语', idiom: '习语', proper: '专有名词' }
 
 // 原句拆成 [{ t, hl }]，s..e 这几个词高亮（中间的空格和标点一起高亮）
 function sentenceRuns(cue, s, e) {
@@ -43,7 +43,7 @@ function noteView(mat, id, cueIdx) {
     material: mat.id,
     head: n.head,
     typeLabel: TYPE[n.type] || '',
-    isWord: n.type === 'word',
+    isWord: n.type === 'word' || n.type === 'proper',
     pos: n.pos,
     ipa: n.ipa,
     context: n.context,
