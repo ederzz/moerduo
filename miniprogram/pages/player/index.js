@@ -61,7 +61,8 @@ Page({
     sheet: { show: false, items: [], active: 0, unknown: null, navText: '', canPrev: false, canNext: false }
   },
 
-  // 打开方式：?id=素材&cue=第几句（从 0 开始，可选）&autoplay=0（不自动播放，可选）
+  // 打开方式：?id=素材&cue=第几句（从 0 开始，可选）&autoplay=1（进入后开始播放，可选）
+  // 默认不自动播放：要用户自己点播放。正在播的就是这篇时，保持原来的播放状态
   onLoad(q) {
     const mat = data.get(q.id)
     if (!mat) {
@@ -83,7 +84,7 @@ Page({
       tDur: fmt.time(mat.duration)
     }, () => {
       this.unsub = player.subscribe((type, st) => this.onPlayer(type, st))
-      const opts = { autoplay: q.autoplay !== '0' }
+      const opts = { autoplay: q.autoplay === '1' }
       if (q.cue != null) opts.cue = +q.cue
       player.open(mat.id, opts)
       this.sync()

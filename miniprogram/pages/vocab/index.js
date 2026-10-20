@@ -79,7 +79,7 @@ Page({
   onSheetGoSource(e) {
     const { material, cue } = e.detail
     this.onSheetClose()
-    wx.navigateTo({ url: `/pages/player/index?id=${material}&cue=${cue}` })
+    wx.navigateTo({ url: `/pages/player/index?id=${material}&cue=${cue}&autoplay=1` })
   },
 
   onUnstar(e) {

@@ -54,7 +54,7 @@ Component({
     },
 
     onOpen() {
-      wx.navigateTo({ url: `/pages/player/index?id=${player.state().id}&autoplay=0` })
+      wx.navigateTo({ url: '/pages/player/index?id=' + player.state().id })
     },
 
     onToggle() {

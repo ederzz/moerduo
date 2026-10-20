@@ -3,7 +3,7 @@
 //
 // 事件（subscribe 的回调收到 type, state）：
 //   load  换了素材       state  播放/暂停/倍速/循环/加载中变了
-//   cue   当前句变了     time   播放位置变了（播放中约每 150ms 一次）
+//   cue   当前句变了     time   播放位置变了（播放中约每 100ms 一次）
 //   ended 播完了         close  关掉了播放器
 const data = require('../data/index')
 const progress = require('./progress')
@@ -13,6 +13,10 @@ const audioSource = require('./audio-source')
 const RATES = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 const SAVE_EVERY = 3000 // 播放中最多每 3 秒写一次进度
 const LOAD_TIMEOUT = 8000 // 有些机型地址 404 时不触发 onError，超时就换下一个地址
+const TICK = 100 // 播放中每 100ms 检查一次位置
+// 很多字幕的句子首尾相连（上一句结束就是下一句开始），位置又是隔一段时间才检查一次，
+// 所以单句循环、重听一句都提前一点点判断句尾，免得漏进下一句。提前量要大于检查间隔
+const END_EARLY = 0.15
 
 // 对外可读的状态。不要在外面直接改，用下面的方法
 const S = { id: null, mat: null, cue: -1, t: 0, playing: false, loading: false, rate: 1, loop: false }
@@ -72,6 +76,8 @@ function ensure() {
         seekGuard = Date.now() + 600
         ctx.seek(startAt)
       }
+      // 开始播放后清掉 startTime，否则播完再播时部分机型会先从头快进到这个位置
+      ctx.startTime = 0
     }
     S.loading = false
     setPlaying(true)
@@ -85,7 +91,16 @@ function ensure() {
   })
   ctx.onEnded(() => {
     setPlaying(false)
-    if (S.mat) progress.complete(S.id, S.mat.cues.length)
+    if (!S.mat) return
+    progress.complete(S.id, S.mat.cues.length)
+    // 播完回到开头，暂停着等下一次播放
+    stopAt = null
+    started = false
+    startAt = 0
+    ctx.startTime = 0
+    S.t = 0
+    setCue(0)
+    emit('time')
     emit('ended')
   })
   ctx.onCanplay(() => {
@@ -119,7 +134,7 @@ function setPlaying(p) {
 
 function startTick() {
   stopTick()
-  timer = setInterval(tick, 150)
+  timer = setInterval(tick, TICK)
 }
 
 function stopTick() {
@@ -192,19 +207,21 @@ function tick() {
   if (!S.mat || !started || Date.now() < seekGuard) return
   const t = ctx.currentTime
   S.t = t
-  if (stopAt != null && t >= stopAt) {
+  if (stopAt != null && t >= stopAt - END_EARLY) {
     stopAt = null
     ctx.pause()
     return
   }
   if (S.loop && S.cue >= 0) {
     const c = S.mat.cues[S.cue]
-    if (t >= c.end + 0.08) {
+    if (t >= c.end - END_EARLY) {
       seek(c.start)
       return
     }
+  } else {
+    // 循环时当前句保持不变，只有手动跳转（seek）才会换句
+    setCue(findCue(t))
   }
-  setCue(findCue(t))
   emit('time')
   if (Date.now() - lastSave > SAVE_EVERY) save()
 }

@@ -116,17 +116,16 @@ Page({
     wx.navigateTo({ url: '/pages/player/index?id=' + e.currentTarget.dataset.id })
   },
 
-  // 点卡片空白处：进播放页，正在播的素材不改变播放状态
+  // 点卡片空白处：进播放页，不改变播放状态
   onContOpen() {
-    const c = this.data.cont
-    wx.navigateTo({ url: `/pages/player/index?id=${c.id}` + (c.live ? '&autoplay=0' : '') })
+    wx.navigateTo({ url: '/pages/player/index?id=' + this.data.cont.id })
   },
 
   // 卡片上的按钮：正在播的就暂停/继续，没在播的就打开并开始播
   onContPlay() {
     const c = this.data.cont
     if (c.live) player.toggle()
-    else wx.navigateTo({ url: '/pages/player/index?id=' + c.id })
+    else wx.navigateTo({ url: `/pages/player/index?id=${c.id}&autoplay=1` })
   },
 
   onMini(e) {
